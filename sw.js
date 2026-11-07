@@ -1,9 +1,15 @@
-const VERSION = 'cat-trainer-1';
+const VERSION = 'cat-trainer-2';
 const DATEIEN = [
   './',
   'index.html',
   'style.css',
   'hilfen.js',
+  'zeichnen.js',
+  'gen-mathe.js',
+  'gen-figuren.js',
+  'gen-raum.js',
+  'gen-technik.js',
+  'gen-konzentration.js',
   'aufgaben.js',
   'speicher.js',
   'app.js',

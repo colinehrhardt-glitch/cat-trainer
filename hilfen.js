@@ -149,3 +149,7 @@ const H = {
     return H.schritte(tokens).map(H.term).join(' = ');
   }
 };
+
+const fz = x => H.zahl(x);
+const fe = x => H.euro(x);
+const letzte = (l, k = 1) => l[l.length - k];

@@ -17,7 +17,7 @@
 - Reines HTML, CSS und JavaScript, kein Framework, kein Build-Schritt.
 - Läuft in Safari auf dem iPad, auch offline.
 - Fortschritt im localStorage, nur über `speicher.js`.
-- Aufgaben in `aufgaben.js`. Wo möglich per Generator erzeugen.
+- Feste Aufgaben, Bereiche und Typen in `aufgaben.js`. Generatoren in `gen-*.js`. Wo möglich per Generator erzeugen.
 - Figuren, Matrizen und Würfel als SVG im Code zeichnen, keine Bilddateien.
 - Keine Kommentare im Code.
 - Design: mobile first, fürs iPad, große Buttons, dunkel, ruhig, gut lesbar. Timer sichtbar, aber nicht hektisch.
@@ -25,7 +25,7 @@
 
 ## Stufen
 1. Grundgerüst, Startseite, Onboarding, Speichern, Übungsmodus Mathe und Zahlenreihen (fertig)
-2. Alle übrigen Testbereiche im Übungsmodus
+2. Alle übrigen Testbereiche im Übungsmodus (fertig)
 3. Prüfungssimulation (anpassend, Zeitlimit) mit Ergebnis und Laufbahn-Empfehlung
 4. Statistik und Lernplan
 

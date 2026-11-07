@@ -46,7 +46,11 @@ function typName(t) {
 
 function typAktiv(t) {
   const x = TYPEN[t];
-  return !!x && (typeof x.erzeuge === 'function' || FESTE_AUFGABEN.some(f => f.typ === t));
+  return !!x && (x.art === 'reaktion' || typeof x.erzeuge === 'function' || FESTE_AUFGABEN.some(f => f.typ === t));
+}
+
+function mischbar(t) {
+  return typAktiv(t) && TYPEN[t].art !== 'reaktion';
 }
 
 function bereichAktiv(b) {
@@ -109,12 +113,21 @@ function niveauHtml(n) {
   return `<span class="niveau" aria-label="Niveau ${n} von 5"><span class="niveau-text">Niveau ${n}</span><span class="niveau-balken">${s}</span></span>`;
 }
 
+function aufgabeBild(a) {
+  if (a.term) return `<div class="term${/[a-zäöüß]{2}/i.test(a.term) ? ' term-wort' : ''}">${esc(a.term)}</div>`;
+  if (a.reihe) return `<div class="reihe">${a.reihe.map(z => `<span class="zahl">${esc(H.zahl(z))}</span>`).join('')}<span class="zahl offen">?</span></div>`;
+  if (a.zeichen) return `<div class="term">${a.zeichen.teile.map(x => (x === '?' ? '<span class="luecke">?</span>' : esc(H.zahl(x)))).join(' ')} = ${esc(H.zahl(a.zeichen.ergebnis))}</div>`;
+  if (a.text) return `<div class="satz">${esc(a.text).replace('___', '<span class="satz-luecke">?</span>')}</div>`;
+  if (a.bild) return `<div class="bild">${a.bild}</div>`;
+  return '';
+}
+
+function antwortInhalt(a, i) {
+  return a.svg ? `<span class="antwort-bild">${a.antworten[i]}</span>` : `<span class="antwort-text">${esc(a.antworten[i])}</span>`;
+}
+
 function aufgabeHtml(a, wahl, aktion) {
   const fertig = wahl !== null && wahl !== undefined;
-  let bild = '';
-  if (a.term) bild = `<div class="term">${esc(a.term)}</div>`;
-  if (a.reihe) bild = `<div class="reihe">${a.reihe.map(z => `<span class="zahl">${esc(H.zahl(z))}</span>`).join('')}<span class="zahl offen">?</span></div>`;
-  if (a.zeichen) bild = `<div class="term">${a.zeichen.teile.map(x => (x === '?' ? '<span class="luecke">?</span>' : esc(H.zahl(x)))).join(' ')} = ${esc(H.zahl(a.zeichen.ergebnis))}</div>`;
   const knoepfe = a.antworten.map((t, i) => {
     let klasse = '';
     let marke = '';
@@ -123,45 +136,179 @@ function aufgabeHtml(a, wahl, aktion) {
       if (i === a.richtig) marke = '<span class="marke-ergebnis" aria-label="richtige Antwort">✓</span>';
       else if (i === wahl) marke = '<span class="marke-ergebnis" aria-label="deine Antwort">✗</span>';
     }
-    return `<button class="antwort ${klasse}" data-aktion="${aktion}" data-wert="${i}"${fertig ? ' disabled' : ''}><span class="buchstabe">${BUCHSTABEN[i]}</span><span class="antwort-text">${esc(t)}</span>${marke}</button>`;
+    return `<button class="antwort ${klasse}" data-aktion="${aktion}" data-wert="${i}"${fertig ? ' disabled' : ''}><span class="buchstabe">${BUCHSTABEN[i]}</span>${antwortInhalt(a, i)}${marke}</button>`;
   }).join('');
-  const lang = !a.term && !a.reihe && !a.zeichen;
-  return `<div class="frage${lang ? ' frage-text' : ''}">${esc(a.frage)}</div>${bild}<div class="antworten${a.antworten.every(t => t.length <= 3) ? ' antworten-kurz' : ''}">${knoepfe}</div>`;
+  const lang = !a.term && !a.reihe && !a.zeichen && !a.bild && !a.text;
+  const art = a.svg ? ' antworten-bild' : a.antworten.every(t => t.length <= 3) ? ' antworten-kurz' : '';
+  return `<div class="frage${lang ? ' frage-text' : ''}">${esc(a.frage)}</div>${aufgabeBild(a)}<div class="antworten${art}">${knoepfe}</div>`;
 }
 
 function rueckmeldungHtml(a, wahl, knopf) {
   const ok = wahl === a.richtig;
-  const titel = ok ? 'Richtig' : `Falsch. Richtig ist ${BUCHSTABEN[a.richtig]}: ${a.antworten[a.richtig]}`;
+  const titel = ok ? 'Richtig' : `Falsch. Richtig ist ${BUCHSTABEN[a.richtig]}${a.svg ? '' : ': ' + a.antworten[a.richtig]}`;
   const weg = a.erklaerung && a.erklaerung.length
     ? `<div class="label">Lösungsweg</div><ol class="weg">${a.erklaerung.map(z => `<li>${esc(z)}</li>`).join('')}</ol>`
     : '';
-  return `<section class="rueckmeldung ${ok ? 'gut' : 'schlecht'}" id="rueckmeldung" tabindex="-1" aria-live="polite"><div class="rueck-titel">${esc(titel)}</div>${weg}${knopf || ''}</section>`;
+  const bild = a.loesungsbild ? `<div class="bild loesungsbild">${a.loesungsbild}</div>` : '';
+  return `<section class="rueckmeldung ${ok ? 'gut' : 'schlecht'}" id="rueckmeldung" tabindex="-1" aria-live="polite"><div class="rueck-titel">${esc(titel)}</div>${weg}${bild}${knopf || ''}</section>`;
+}
+
+function aufgabenSchluessel(a) {
+  return JSON.stringify([a.frage, a.term, a.reihe, a.zeichen, a.text, a.bild, a.svg ? '' : a.antworten.slice().sort()]);
 }
 
 function neueAufgabe(typ, niveau, gesehen) {
   const t = TYPEN[typ];
-  const schluessel = a => JSON.stringify([a.frage, a.term, a.reihe, a.zeichen]);
-  const feste = FESTE_AUFGABEN.filter(f => f.typ === typ);
-  const passende = feste.filter(f => f.niveau === niveau && !gesehen.has(schluessel(f)));
+  const feste = FESTE_AUFGABEN.filter(f => f.typ === typ).map(f => Object.assign({ frage: t.frage || '' }, f));
+  const passende = feste.filter(f => f.niveau === niveau && !gesehen.has(aufgabenSchluessel(f)));
   let a = null;
-  if (passende.length && (!t.erzeuge || Math.random() < 0.25)) a = festeAufgabe(H.wahl(passende));
+  if (passende.length && (!t.erzeuge || Math.random() < (t.festAnteil || 0.25))) a = festeAufgabe(H.wahl(passende));
   for (let v = 0; !a && t.erzeuge && v < 25; v++) {
     const k = t.erzeuge(niveau);
-    if (!gesehen.has(schluessel(k)) || v === 24) a = k;
+    if (!gesehen.has(aufgabenSchluessel(k)) || v === 24) a = k;
   }
   if (!a && feste.length) {
-    const naechste = feste.slice().sort((x, y) => Math.abs(x.niveau - niveau) - Math.abs(y.niveau - niveau));
-    a = festeAufgabe(naechste.find(f => !gesehen.has(schluessel(f))) || naechste[0]);
+    const naechste = H.mische(feste).sort((x, y) => Math.abs(x.niveau - niveau) - Math.abs(y.niveau - niveau));
+    a = festeAufgabe(naechste.find(f => !gesehen.has(aufgabenSchluessel(f))) || naechste[0]);
   }
   a.typ = typ;
   a.niveau = niveau;
-  gesehen.add(schluessel(a));
+  gesehen.add(aufgabenSchluessel(a));
   return a;
 }
 
 function festeAufgabe(f) {
   const o = H.mische(f.antworten);
-  return { frage: f.frage, antworten: o, richtig: o.indexOf(f.antworten[0]), erklaerung: f.erklaerung || [] };
+  return { frage: f.frage, term: f.term, text: f.text, antworten: o, richtig: o.indexOf(f.antworten[0]), erklaerung: f.erklaerung || [] };
+}
+
+let rk = null;
+
+function reaktionsIntro() {
+  const beispiele = [
+    [{ farbe: 'blau', richtung: 1 }, 'Rechts tippen'],
+    [{ farbe: 'orange', richtung: 1 }, 'Links tippen'],
+    [{ farbe: 'grau', richtung: -1 }, 'Nicht tippen']
+  ].map(([s, t]) => `<div class="rk-regel">${reaktionsPfeil(s, true)}<span>${t}</span></div>`).join('');
+  const e = daten.einstellungen;
+  const n = e.niveau === 'auto' ? startNiveau() : Number(e.niveau);
+  return kopf('Reaktionstest', ['gehe', 'bereich']) + `<main class="seite">
+    <section class="einleitung"><h1>Reaktionstest</h1>${TYPEN.reaktion.erklaerung.map(p => `<p>${esc(p)}</p>`).join('')}</section>
+    <section class="beispiel"><div class="label">So funktioniert es</div><div class="rk-regeln">${beispiele}</div></section>
+    <p class="klein">Start auf Niveau ${n}. Je höher das Niveau, desto weniger Zeit hast du.</p>
+    <div class="knoepfe">
+      <button class="knopf primaer" data-aktion="rk-probe">Probelauf mit 6 Signalen</button>
+      <button class="knopf" data-aktion="los">Test starten (20 Signale)</button>
+    </div>
+  </main>`;
+}
+
+function starteReaktion(probe) {
+  const e = daten.einstellungen;
+  const n = e.niveau === 'auto' ? startNiveau() : Number(e.niveau);
+  if (rk) clearTimeout(rk.timer);
+  rk = { probe, niveau: n, startNiveau: n, auto: !probe && e.niveau === 'auto', anzahl: probe ? 6 : 20, ergebnisse: [], phase: 'bereit', signal: null, t0: 0, timer: null, letzte: null };
+  zeige('reaktion');
+}
+
+function reaktionsFeld() {
+  if (rk.phase === 'bereit') return '<div class="rk-mitte"><p>Halte deine Finger über „Links“ und „Rechts“.</p><button class="knopf primaer rk-startknopf" data-aktion="rk-start">Start</button></div>';
+  if (rk.phase === 'warten' || rk.phase === 'pause') return '<div class="rk-mitte rk-kreuz">+</div>';
+  if (rk.phase === 'signal') return `<div class="rk-mitte rk-seite${rk.signal.seite}">${reaktionsPfeil(rk.signal)}</div>`;
+  const e = rk.letzte;
+  const texte = { ok: `${e.ms} ms`, falsch: 'Falsche Seite', frueh: 'Zu früh', langsam: 'Zu langsam', 'nogo-ok': 'Richtig, nicht getippt', 'nogo-falsch': 'Grau: nicht tippen' };
+  return `<div class="rk-mitte"><div class="rk-meldung ${e.r ? 'gut' : 'schlecht'}">${texte[e.art]}</div></div>`;
+}
+
+function zeichneReaktion() {
+  const f = document.getElementById('rk-feld');
+  const t = document.getElementById('rk-titel');
+  if (f) f.innerHTML = reaktionsFeld();
+  if (t) t.textContent = reaktionsTitel();
+}
+
+function reaktionsTitel() {
+  return `${rk.probe ? 'Probelauf · ' : ''}Signal ${Math.min(rk.ergebnisse.length + 1, rk.anzahl)} von ${rk.anzahl}`;
+}
+
+function rkNaechstes() {
+  clearTimeout(rk.timer);
+  if (rk.ergebnisse.length >= rk.anzahl) {
+    rk.phase = 'fertig';
+    render();
+    return;
+  }
+  const c = REAKTION[rk.niveau];
+  rk.phase = 'warten';
+  rk.signal = null;
+  zeichneReaktion();
+  rk.timer = setTimeout(() => {
+    rk.signal = reaktionsSignal(rk.niveau);
+    rk.phase = 'signal';
+    rk.t0 = performance.now();
+    zeichneReaktion();
+    rk.timer = setTimeout(rkZeitAus, c.zeit);
+  }, H.zufall(c.pause[0], c.pause[1]));
+}
+
+function rkTipp(seite) {
+  if (!rk || ansicht.name !== 'reaktion' || offenerDialog) return;
+  if (rk.phase === 'warten') {
+    clearTimeout(rk.timer);
+    rkErgebnis({ art: 'frueh', r: 0, ms: 0 });
+    return;
+  }
+  if (rk.phase !== 'signal') return;
+  clearTimeout(rk.timer);
+  const ms = Math.round(performance.now() - rk.t0);
+  if (rk.signal.ziel === 0) rkErgebnis({ art: 'nogo-falsch', r: 0, ms });
+  else rkErgebnis({ art: seite === rk.signal.ziel ? 'ok' : 'falsch', r: seite === rk.signal.ziel ? 1 : 0, ms });
+}
+
+function rkZeitAus() {
+  if (rk.signal.ziel === 0) rkErgebnis({ art: 'nogo-ok', r: 1, ms: 0 });
+  else rkErgebnis({ art: 'langsam', r: 0, ms: REAKTION[rk.niveau].zeit });
+}
+
+function rkErgebnis(e) {
+  e.niveau = rk.niveau;
+  rk.ergebnisse.push(e);
+  rk.letzte = e;
+  if (!rk.probe) {
+    daten.verlauf.push({ b: 'konzentration', t: 'reaktion', n: rk.niveau, r: e.r, ms: e.ms, d: Date.now(), m: 'u' });
+    speichern();
+  }
+  if (rk.auto && rk.ergebnisse.length % 5 === 0) {
+    const richtig = rk.ergebnisse.slice(-5).filter(x => x.r).length;
+    if (richtig >= 4) rk.niveau = Math.min(5, rk.niveau + 1);
+    if (richtig <= 2) rk.niveau = Math.max(1, rk.niveau - 1);
+  }
+  rk.phase = 'rueck';
+  zeichneReaktion();
+  rk.timer = setTimeout(rkNaechstes, 750);
+}
+
+function reaktionsAuswertung() {
+  const l = rk.ergebnisse;
+  const treffer = l.filter(x => x.art === 'ok');
+  const schnitt = treffer.length ? Math.round(treffer.reduce((s, x) => s + x.ms, 0) / treffer.length) : 0;
+  const zaehle = art => l.filter(x => x.art === art).length;
+  const werte = [
+    ['Richtig', `${l.filter(x => x.r).length} von ${l.length}`],
+    ['Ø Reaktionszeit', treffer.length ? `${schnitt} ms` : '–'],
+    ['Falsche Seite', zaehle('falsch') + zaehle('nogo-falsch')],
+    ['Zu früh', zaehle('frueh')],
+    ['Zu langsam', zaehle('langsam')],
+    ['Niveau', rk.auto ? `${rk.startNiveau} → ${rk.niveau}` : rk.niveau]
+  ].map(([a, b]) => `<div class="wert"><span>${a}</span><span>${b}</span></div>`).join('');
+  const knoepfe = rk.probe
+    ? '<button class="knopf primaer" data-aktion="los">Test starten (20 Signale)</button><button class="knopf" data-aktion="rk-probe">Noch ein Probelauf</button>'
+    : '<button class="knopf primaer" data-aktion="los">Noch eine Runde</button><button class="knopf" data-aktion="gehe" data-wert="bereich">Anderen Typ wählen</button><button class="knopf leise" data-aktion="gehe" data-wert="start">Zur Startseite</button>';
+  return kopf(rk.probe ? 'Probelauf beendet' : 'Auswertung') + `<main class="seite">
+    <section class="ergebnis"><div class="ergebnis-zahl">${treffer.length ? schnitt + ' ms' : '–'}</div><div class="text-2">durchschnittliche Reaktionszeit</div></section>
+    <section class="werte">${werte}</section>
+    <div class="knoepfe">${knoepfe}</div>
+  </main>`;
 }
 
 const ANSICHTEN = {
@@ -253,7 +400,7 @@ const ANSICHTEN = {
 
   bereich() {
     const b = BEREICHE.find(x => x.id === auswahl.bereich);
-    const aktive = b.typen.filter(typAktiv);
+    const aktive = b.typen.filter(mischbar);
     const e = daten.einstellungen;
     const zeilen = [];
     if (aktive.length > 1) {
@@ -284,8 +431,9 @@ const ANSICHTEN = {
   intro() {
     const t = auswahl.typ;
     const b = BEREICHE.find(x => x.id === auswahl.bereich);
+    if (t !== 'mix' && TYPEN[t].art === 'reaktion') return reaktionsIntro();
     const text = t === 'mix'
-      ? [`Die Aufgaben kommen gemischt aus ${H.und(b.typen.filter(typAktiv).map(typName))}.`]
+      ? [`Die Aufgaben kommen gemischt aus ${H.und(b.typen.filter(mischbar).map(typName))}.`]
       : TYPEN[t].erklaerung;
     const bsp = ansicht.beispiel;
     const fertig = ansicht.bspWahl !== null;
@@ -335,10 +483,14 @@ const ANSICHTEN = {
     }
     const fehler = l.filter(x => !x.richtig).map(x => {
       const a = x.aufgabe;
-      const titel = a.term || (a.reihe ? a.reihe.map(z => H.zahl(z)).join(', ') + ', ?' : a.zeichen ? a.zeichen.teile.map(z => (z === '?' ? '?' : H.zahl(z))).join(' ') + ' = ' + H.zahl(a.zeichen.ergebnis) : a.frage);
+      const titel = a.term || a.text || (a.reihe ? a.reihe.map(z => H.zahl(z)).join(', ') + ', ?' : a.zeichen ? a.zeichen.teile.map(z => (z === '?' ? '?' : H.zahl(z))).join(' ') + ' = ' + H.zahl(a.zeichen.ergebnis) : a.frage);
+      const antworten = a.svg
+        ? `<div class="fehler-bilder"><div><div class="label">Deine Antwort</div>${a.antworten[x.gewaehlt]}</div><div><div class="label">Richtig</div>${a.antworten[a.richtig]}</div></div>`
+        : `<p>Deine Antwort: ${esc(a.antworten[x.gewaehlt])}<br>Richtig: <strong>${esc(a.antworten[a.richtig])}</strong></p>`;
       return `<details class="fehler"><summary>${esc(titel)}</summary><div class="fehler-inhalt">
-        ${a.term || a.reihe || a.zeichen ? `<p>${esc(a.frage)}</p>` : ''}
-        <p>Deine Antwort: ${esc(a.antworten[x.gewaehlt])}<br>Richtig: <strong>${esc(a.antworten[a.richtig])}</strong></p>
+        ${a.term || a.reihe || a.zeichen || a.text ? `<p>${esc(a.frage)}</p>` : ''}
+        ${a.bild ? `<div class="bild">${a.bild}</div>` : ''}
+        ${antworten}
         <ol class="weg">${a.erklaerung.map(z => `<li>${esc(z)}</li>`).join('')}</ol>
       </div></details>`;
     }).join('');
@@ -352,6 +504,15 @@ const ANSICHTEN = {
         <button class="knopf leise" data-aktion="gehe" data-wert="start">Zur Startseite</button>
       </div>
     </main>`;
+  },
+
+  reaktion() {
+    if (rk.phase === 'fertig') return reaktionsAuswertung();
+    return `<header class="kopf"><button class="symbol" data-aktion="rk-abbrechen" aria-label="Test beenden">${SYMBOLE.schliessen}</button><div class="kopf-titel" id="rk-titel">${reaktionsTitel()}</div>${niveauHtml(rk.niveau).replace('class="niveau"', 'class="niveau niveau-kopf"')}</header>
+      <main class="seite rk-main">
+        <div class="rk-feld" id="rk-feld">${reaktionsFeld()}</div>
+        <div class="rk-tasten"><button class="rk-taste" data-reaktion="-1">Links</button><button class="rk-taste" data-reaktion="1">Rechts</button></div>
+      </main>`;
   },
 
   einstellungen() {
@@ -384,7 +545,7 @@ const ANSICHTEN = {
         <p>Inoffizielle Übungs-App. Sie ist nicht von der Bundeswehr und hat keine Verbindung zu ihr.</p>
         <p>Alle Aufgaben sind selbst erstellt und bilden nur das Format des CAT nach.</p>
         <p>Ergebnisse und Empfehlungen sind Schätzungen. Die echten Grenzwerte sind nicht öffentlich.</p>
-        <p class="klein">Version 1 · Stufe 1</p>
+        <p class="klein">Version 2 · Stufe 2</p>
       </section>
     </main>`;
   }
@@ -403,6 +564,7 @@ function render() {
 }
 
 function zeige(name, extra) {
+  if (rk && name !== 'reaktion') clearTimeout(rk.timer);
   ansicht = Object.assign({ name }, extra || {});
   render();
   window.scrollTo(0, 0);
@@ -444,13 +606,21 @@ function schliesseDialog() {
 }
 
 function starteBeispiel() {
-  const typen = auswahl.typ === 'mix' ? BEREICHE.find(b => b.id === auswahl.bereich).typen.filter(typAktiv) : [auswahl.typ];
+  if (auswahl.typ !== 'mix' && TYPEN[auswahl.typ].art === 'reaktion') {
+    zeige('intro', { bspWahl: null });
+    return;
+  }
+  const typen = auswahl.typ === 'mix' ? BEREICHE.find(b => b.id === auswahl.bereich).typen.filter(mischbar) : [auswahl.typ];
   zeige('intro', { beispiel: neueAufgabe(H.wahl(typen), 1, new Set()), bspWahl: null });
 }
 
 function starteSitzung() {
+  if (auswahl.typ !== 'mix' && TYPEN[auswahl.typ].art === 'reaktion') {
+    starteReaktion(false);
+    return;
+  }
   const e = daten.einstellungen;
-  const typen = auswahl.typ === 'mix' ? BEREICHE.find(b => b.id === auswahl.bereich).typen.filter(typAktiv) : [auswahl.typ];
+  const typen = auswahl.typ === 'mix' ? BEREICHE.find(b => b.id === auswahl.bereich).typen.filter(mischbar) : [auswahl.typ];
   const start = e.niveau === 'auto' ? startNiveau() : Number(e.niveau);
   sitzung = { typen, beutel: [], auto: e.niveau === 'auto', niveau: start, startNiveau: start, anzahl: e.anzahl, liste: [], gesehen: new Set(), serie: 0, aktuell: null };
   naechsteAufgabe();
@@ -616,7 +786,34 @@ const AKTIONEN = {
     if (d && d.weiter) d.weiter();
   },
   'dialog-nein'() {
+    const d = offenerDialog;
     schliesseDialog();
+    if (d && d.zurueck) d.zurueck();
+  },
+  'rk-probe'() {
+    starteReaktion(true);
+  },
+  'rk-start'() {
+    if (rk && rk.phase === 'bereit') rkNaechstes();
+  },
+  'rk-abbrechen'() {
+    if (rk.probe || !rk.ergebnisse.length) {
+      clearTimeout(rk.timer);
+      rk = null;
+      zeige('intro', { bspWahl: null });
+      return;
+    }
+    clearTimeout(rk.timer);
+    rk.phase = 'pause';
+    zeichneReaktion();
+    frageNach({
+      titel: 'Test beenden?',
+      text: 'Deine bisherigen Reaktionen bleiben gespeichert.',
+      ja: 'Beenden',
+      nein: 'Weitermachen',
+      weiter: () => { rk.phase = 'fertig'; render(); },
+      zurueck: () => rkNaechstes()
+    });
   }
 };
 
@@ -638,7 +835,20 @@ document.addEventListener('change', e => {
   melde('Gespeichert');
 });
 
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest('[data-reaktion]');
+  if (!el) return;
+  e.preventDefault();
+  rkTipp(Number(el.dataset.reaktion));
+});
+
 document.addEventListener('keydown', e => {
+  if (ansicht.name === 'reaktion' && !offenerDialog) {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'f') { e.preventDefault(); rkTipp(-1); return; }
+    if (k === 'arrowright' || k === 'j') { e.preventDefault(); rkTipp(1); return; }
+    if ((k === ' ' || k === 'enter') && rk && rk.phase === 'bereit') { e.preventDefault(); rkNaechstes(); return; }
+  }
   if (offenerDialog) {
     if (e.key === 'Escape') schliesseDialog();
     return;

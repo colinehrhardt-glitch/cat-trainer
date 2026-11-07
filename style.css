@@ -15,6 +15,8 @@
   --schlecht-zart: #3a2023;
   --warn: #e0bd6c;
   --warn-zart: #33291a;
+  --orange: #e8a25a;
+  --wuerfel-oben: #2e3944;
   --schatten: rgba(0, 0, 0, 0.45);
   --schrift: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --schrift-titel: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -118,7 +120,7 @@ svg {
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: 3rem 1fr 3rem;
+  grid-template-columns: 4.5rem 1fr 4.5rem;
   align-items: center;
   gap: 0.5rem;
   min-height: 3.5rem;
@@ -906,12 +908,309 @@ svg {
   box-shadow: 0 8px 24px var(--schatten);
 }
 
-[hidden] {
-  display: none !important;
-}
+
 
 @media (prefers-reduced-motion: reduce) {
   .balken span {
     transition: none;
   }
+}
+
+.fig {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fig text {
+  fill: var(--text);
+  font-family: var(--schrift);
+}
+
+.bild {
+  margin: 0.25rem 0 1.25rem;
+}
+
+.bild-mitte {
+  display: flex;
+  justify-content: center;
+}
+
+.bild-mitte .fig {
+  max-width: 34rem;
+}
+
+.bild-mitte .netz {
+  max-width: 15rem;
+}
+
+.bild-mitte .technik {
+  max-width: 30rem;
+}
+
+.kachelreihe {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.kachelreihe .fig,
+.kachelreihe .kachel-offen {
+  width: 4.6rem;
+  height: 4.6rem;
+}
+
+.kachel-offen {
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--akzent);
+  border-radius: 10px;
+  color: var(--akzent);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.matrix {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  max-width: 17rem;
+  margin: 0 auto;
+}
+
+.matrix .kachel-offen {
+  aspect-ratio: 1;
+}
+
+.vorlage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.vorlage .fig {
+  max-width: 10rem;
+}
+
+.satz {
+  font-size: 1.4rem;
+  line-height: 1.55;
+  padding: 1rem 1.2rem;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  margin-bottom: 1.25rem;
+}
+
+.satz-luecke {
+  display: inline-block;
+  min-width: 3.5rem;
+  border-bottom: 2px solid var(--akzent);
+  color: var(--akzent);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.term-wort {
+  font-size: clamp(1.25rem, 5vw, 1.9rem);
+}
+
+.antworten-bild {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 620px) {
+  .antworten-bild {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.antworten-bild .antwort {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem;
+}
+
+.antwort-bild {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 8rem;
+}
+
+.loesungsbild {
+  margin: 0.25rem 0 0.4rem;
+}
+
+.fehler-bilder {
+  display: flex;
+  gap: 1rem;
+}
+
+.fehler-bilder > div {
+  flex: 1;
+  max-width: 9rem;
+}
+
+.fig .fr { fill: var(--flaeche); stroke: var(--linie); stroke-width: 1.5; }
+.fig .fh { fill: var(--flaeche); stroke: var(--text); stroke-width: 3; stroke-linejoin: round; }
+.fig .fv { fill: var(--text); stroke: var(--text); stroke-width: 3; stroke-linejoin: round; }
+.fig .fa { fill: var(--akzent); stroke: var(--akzent); stroke-width: 3; stroke-linejoin: round; }
+.fig .fm { fill: var(--orange); }
+.fig .sv { fill: var(--text); }
+.fig .sl { fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.fig .sa { fill: var(--akzent); }
+.fig .nf { fill: var(--flaeche-2); stroke: var(--text-2); stroke-width: 1.5; }
+.fig .nm { fill: var(--akzent-zart); stroke: var(--akzent); stroke-width: 3; }
+.fig .wf { fill: var(--flaeche-2); stroke: var(--text); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.fig .wo { fill: var(--wuerfel-oben); }
+.fig .pz { fill: var(--akzent); stroke: var(--grund); stroke-width: 1.5; }
+.fig .zr { fill: var(--flaeche-2); stroke: var(--text-2); stroke-width: 1.5; stroke-linejoin: round; }
+.fig .zs { fill: var(--flaeche); stroke: var(--text-2); stroke-width: 1.5; }
+.fig .zn { fill: var(--grund); stroke: var(--text-2); stroke-width: 1.5; }
+.fig .zt { fill: var(--text); font-weight: 700; }
+.fig .t2 { fill: var(--text-2); }
+.fig .pf { fill: none; stroke: var(--orange); stroke-width: 3; stroke-linecap: round; }
+.fig .pfs { fill: var(--orange); }
+.fig .rm { fill: none; stroke: var(--text); stroke-width: 2.5; }
+.fig .wb { fill: var(--text-2); }
+.fig .wd { fill: var(--linie); }
+.fig .wt { stroke: var(--text-2); stroke-width: 1.5; }
+.fig .wg { fill: var(--flaeche-2); stroke: var(--text-2); stroke-width: 1.5; }
+.fig .wgt { fill: var(--text); font-weight: 600; }
+.fig .wu { fill: var(--akzent-zart); stroke: var(--akzent); stroke-width: 2; stroke-dasharray: 4 3; }
+.fig .wut { fill: var(--akzent); font-weight: 700; }
+.fig .fs { stroke: var(--text-2); stroke-width: 2; }
+.fig .fl { stroke: var(--text); stroke-width: 2; }
+.fig .fr2 { fill: var(--flaeche-2); stroke: var(--text); stroke-width: 2; }
+.fig .fp2 { fill: var(--text); }
+.fig .hl { fill: var(--akzent-zart); stroke: var(--akzent); stroke-width: 1.5; }
+.fig .kz { fill: var(--text); font-family: ui-monospace, Menlo, Consolas, monospace; }
+.fig .ks { stroke: var(--text); stroke-width: 2; stroke-linecap: round; }
+.fig .ok { fill: var(--gut); font-weight: 700; }
+.fig .nok { fill: var(--schlecht); font-weight: 700; }
+.fig .rb { fill: var(--akzent); }
+.fig .ro { fill: var(--orange); }
+.fig .rg { fill: var(--text-2); }
+
+.rk-main {
+  min-height: calc(100vh - 5rem);
+  min-height: calc(100dvh - 5rem);
+}
+
+.rk-feld {
+  display: flex;
+  flex: 1;
+  min-height: 16rem;
+  border-radius: 16px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+}
+
+.rk-mitte {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.rk-seite-1 {
+  align-items: flex-start;
+}
+
+.rk-seite1 {
+  align-items: flex-end;
+}
+
+.rk-kreuz {
+  font-size: 3rem;
+  font-weight: 300;
+  color: var(--text-2);
+}
+
+.rpfeil {
+  width: 12rem;
+}
+
+.rpfeil.klein {
+  width: 3.5rem;
+  flex: none;
+}
+
+.rk-meldung {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rk-meldung.gut {
+  color: var(--gut);
+}
+
+.rk-meldung.schlecht {
+  color: var(--schlecht);
+}
+
+.rk-startknopf {
+  width: auto;
+  padding-inline: 3rem;
+}
+
+.rk-tasten {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.rk-taste {
+  min-height: 7rem;
+  border-radius: 16px;
+  border: 1px solid var(--linie);
+  background: var(--flaeche-2);
+  color: var(--text);
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.rk-taste:active {
+  background: var(--akzent-zart);
+  border-color: var(--akzent);
+}
+
+.rk-regeln {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rk-regel {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+}
+
+.niveau-kopf {
+  justify-self: end;
+}
+
+.niveau-kopf .niveau-text {
+  display: none;
+}
+
+[hidden] {
+  display: none !important;
 }
