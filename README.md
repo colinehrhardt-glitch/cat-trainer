@@ -23,7 +23,7 @@ Geplant: Stufe 2 (übrige Bereiche), Stufe 3 (Prüfungssimulation), Stufe 4 (Sta
 ## Auf dem iPad testen
 
 1. Auf GitHub im Repo **cat-trainer**: *Settings → Pages → Build and deployment*
-2. *Source*: „Deploy from a branch“, Branch auswählen (z. B. `main`), Ordner `/ (root)`, *Save*
+2. *Source*: „Deploy from a branch“, Branch `claude/clever-feynman-o6d36h`, Ordner `/ (root)`, *Save*
 3. Nach 1–2 Minuten öffnen: `https://colinehrhardt-glitch.github.io/cat-trainer/`
 4. In Safari: *Teilen → Zum Home-Bildschirm*. Dann startet die App wie eine richtige App und funktioniert offline.
 
