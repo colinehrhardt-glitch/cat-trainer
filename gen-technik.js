@@ -178,7 +178,7 @@ function zahnradTempo(n) {
     const breite = ziel.x + rc + 20, hoehe = 75 + Math.max(...raeder.map(z => z.r)) + 28;
     const weg = ['Zähne × Umdrehungen ist bei ineinandergreifenden Zahnrädern gleich.'];
     if (mitte) weg.push('Das mittlere Zahnrad ändert nur die Drehrichtung, nicht die Geschwindigkeit am Ende.');
-    weg.push(`${na} × ${za} = ${na * za}`, `${na * za} ÷ ${zc} = ${fz(nc)}-mal pro Minute`);
+    weg.push(`A: ${na} Umdrehungen × ${za} Zähne = ${na * za}`, `${ziel.name}: ${na * za} ÷ ${zc} Zähne = ${fz(nc)}-mal pro Minute`);
     const top = Math.max(...raeder.map(z => z.r)) - 75 + 10;
     return {
       frage: `Zahnrad A dreht sich ${na}-mal pro Minute. Wie oft dreht sich Zahnrad ${ziel.name} pro Minute?`,
@@ -327,7 +327,7 @@ function flaschenzuege(n) {
     if (!Number.isInteger(f)) continue;
     const weg = s === 1
       ? ['Eine feste Rolle lenkt die Kraft nur um.', `Du brauchst die volle Kraft: ${last} N.`]
-      : [`Zähle die Seilstücke, an denen die Last hängt: ${s}.`, `Jedes Stück trägt den ${s}. Teil der Last.`, `${last} N ÷ ${s} = ${f} N`];
+      : [`Zähle die Seilstücke, an denen die Last hängt: ${s}.`, 'Die Last verteilt sich gleichmäßig auf alle Seilstücke.', `${last} N ÷ ${s} = ${f} N`];
     if (kg) weg.unshift(`${last / 10} kg wiegen etwa ${last} N (1 kg ≈ 10 N).`);
     return {
       frage: `Mit welcher Kraft F musst du ziehen, um die Last zu halten? Reibung und Gewicht der Rollen zählen nicht.${kg ? ' Rechne mit 1 kg ≈ 10 N.' : ''}`,
@@ -369,7 +369,9 @@ const PHYSIK = {
       return { frage: `Zwei Widerstände mit ${a} Ω und ${b} Ω sind parallel geschaltet. Wie groß ist der Gesamtwiderstand?`, ...H.optionen(g, [a + b, (a + b) / 2, Math.abs(a - b), Math.min(a, b)], x => H.einheit(x, 'Ω'), { ganz: false }), erklaerung: ['Parallel gilt: Gesamtwiderstand = (R1 × R2) ÷ (R1 + R2)', `(${a} × ${b}) ÷ (${a} + ${b}) = ${a * b} ÷ ${a + b} = ${fz(g)} Ω`, 'Der Gesamtwiderstand ist immer kleiner als der kleinste Einzelwiderstand.'] };
     },
     () => {
-      const p = H.wahl([0.5, 1, 1.5, 2, 2.5, 3]), h = H.wahl([2, 3, 4, 5, 6, 8, 10]), ct = H.wahl([25, 30, 35, 40]), kwh = p * h, kosten = kwh * ct / 100;
+      let p, h, ct;
+      do { p = H.wahl([0.5, 1, 1.5, 2, 2.5, 3]); h = H.wahl([2, 3, 4, 5, 6, 8, 10]); ct = H.wahl([25, 30, 35, 40]); } while (!Number.isInteger(p * h * ct));
+      const kwh = p * h, kosten = kwh * ct / 100;
       return { frage: `Ein Heizlüfter mit ${fz(p)} kW läuft ${h} Stunden. Eine Kilowattstunde kostet ${ct} Cent. Was kostet das?`, ...H.optionen(kosten, [p * ct / 100, kwh * ct, kosten * 2, kosten + 1], fe, { ganz: false }), erklaerung: ['Energie = Leistung × Zeit', `${fz(p)} kW × ${h} h = ${fz(kwh)} kWh`, `${fz(kwh)} × ${ct} ct = ${fe(kosten)}`] };
     }
   ],

@@ -83,6 +83,20 @@ function datumText(iso) {
   return `${t}.${m}.${j}`;
 }
 
+function aufgabenVerlauf() {
+  return daten.verlauf.filter(x => x.t !== 'reaktion');
+}
+
+function statZeile(v, reaktion) {
+  if (!v.length) return '';
+  if (reaktion) {
+    const ok = v.filter(x => x.r && x.ms > 0);
+    const schnitt = ok.length ? Math.round(ok.reduce((s, x) => s + x.ms, 0) / ok.length) : 0;
+    return `<span class="zeile-stat">${zahlText(v.length)} Signale · ${quote(v)} %${ok.length ? ` · Ø ${schnitt} ms` : ''}</span>`;
+  }
+  return `<span class="zeile-stat">${zahlText(v.length)} ${v.length === 1 ? 'Aufgabe' : 'Aufgaben'} · ${quote(v)} %</span>`;
+}
+
 function quote(liste) {
   return liste.length ? Math.round(100 * liste.filter(x => x.r).length / liste.length) : 0;
 }
@@ -213,7 +227,8 @@ function starteReaktion(probe) {
 
 function reaktionsFeld() {
   if (rk.phase === 'bereit') return '<div class="rk-mitte"><p>Halte deine Finger über „Links“ und „Rechts“.</p><button class="knopf primaer rk-startknopf" data-aktion="rk-start">Start</button></div>';
-  if (rk.phase === 'warten' || rk.phase === 'pause') return '<div class="rk-mitte rk-kreuz">+</div>';
+  if (rk.phase === 'pause') return '<div class="rk-mitte"><p>Pausiert.</p><button class="knopf primaer rk-startknopf" data-aktion="rk-weiter">Weiter</button></div>';
+  if (rk.phase === 'warten') return '<div class="rk-mitte rk-kreuz">+</div>';
   if (rk.phase === 'signal') return `<div class="rk-mitte rk-seite${rk.signal.seite}">${reaktionsPfeil(rk.signal)}</div>`;
   const e = rk.letzte;
   const texte = { ok: `${e.ms} ms`, falsch: 'Falsche Seite', frueh: 'Zu früh', langsam: 'Zu langsam', 'nogo-ok': 'Richtig, nicht getippt', 'nogo-falsch': 'Grau: nicht tippen' };
@@ -223,8 +238,10 @@ function reaktionsFeld() {
 function zeichneReaktion() {
   const f = document.getElementById('rk-feld');
   const t = document.getElementById('rk-titel');
+  const n = document.querySelector('.niveau-kopf');
   if (f) f.innerHTML = reaktionsFeld();
   if (t) t.textContent = reaktionsTitel();
+  if (n) n.outerHTML = niveauHtml(rk.niveau).replace('class="niveau"', 'class="niveau niveau-kopf"');
 }
 
 function reaktionsTitel() {
@@ -296,7 +313,7 @@ function reaktionsAuswertung() {
   const werte = [
     ['Richtig', `${l.filter(x => x.r).length} von ${l.length}`],
     ['Ø Reaktionszeit', treffer.length ? `${schnitt} ms` : '–'],
-    ['Falsche Seite', zaehle('falsch') + zaehle('nogo-falsch')],
+    ['Falsch getippt', zaehle('falsch') + zaehle('nogo-falsch')],
     ['Zu früh', zaehle('frueh')],
     ['Zu langsam', zaehle('langsam')],
     ['Niveau', rk.auto ? `${rk.startNiveau} → ${rk.niveau}` : rk.niveau]
@@ -362,7 +379,7 @@ const ANSICHTEN = {
     }
     const heute = new Date();
     heute.setHours(0, 0, 0, 0);
-    const h = daten.verlauf.filter(x => x.d >= heute.getTime());
+    const h = aufgabenVerlauf().filter(x => x.d >= heute.getTime());
     const heuteText = h.length ? `Heute: ${h.length} ${h.length === 1 ? 'Aufgabe' : 'Aufgaben'} · ${quote(h)} % richtig` : 'Heute hast du noch nicht geübt.';
     const kachel = (titel, text, aktion) => aktion
       ? `<button class="kachel" data-aktion="${aktion}"><span class="kachel-titel">${titel}</span><span class="kachel-text">${text}</span></button>`
@@ -391,8 +408,7 @@ const ANSICHTEN = {
       if (!bereichAktiv(b)) {
         return `<div class="zeile aus" aria-disabled="true"><span class="zeile-inhalt"><span class="zeile-titel">${esc(b.name)}</span><span class="zeile-text">${esc(b.info)}</span></span><span class="bald">Bald</span></div>`;
       }
-      const v = daten.verlauf.filter(x => x.b === b.id);
-      const stat = v.length ? `<span class="zeile-stat">${zahlText(v.length)} ${v.length === 1 ? 'Aufgabe' : 'Aufgaben'} · ${quote(v)} %</span>` : '';
+      const stat = statZeile(aufgabenVerlauf().filter(x => x.b === b.id));
       return `<button class="zeile" data-aktion="bereich" data-wert="${b.id}"><span class="zeile-inhalt"><span class="zeile-titel">${esc(b.name)}</span><span class="zeile-text">${esc(b.info)}</span>${stat}</span>${SYMBOLE.pfeil}</button>`;
     }).join('');
     return kopf('Üben', ['gehe', 'start']) + `<main class="seite"><p class="text-2 einstieg">Wähle einen Bereich.</p><div class="liste">${zeilen}</div></main>`;
@@ -411,8 +427,7 @@ const ANSICHTEN = {
         zeilen.push(`<div class="zeile aus" aria-disabled="true"><span class="zeile-inhalt"><span class="zeile-titel">${esc(typName(t))}</span></span><span class="bald">Bald</span></div>`);
         return;
       }
-      const v = daten.verlauf.filter(x => x.t === t);
-      const stat = v.length ? `<span class="zeile-stat">${zahlText(v.length)} ${v.length === 1 ? 'Aufgabe' : 'Aufgaben'} · ${quote(v)} %</span>` : '';
+      const stat = statZeile(daten.verlauf.filter(x => x.t === t), t === 'reaktion');
       zeilen.push(`<button class="zeile" data-aktion="typ" data-wert="${t}"><span class="zeile-inhalt"><span class="zeile-titel">${esc(typName(t))}</span>${stat}</span>${SYMBOLE.pfeil}</button>`);
     });
     const segment = (aktion, wert, text, aktiv) => `<button class="segment${aktiv ? ' aktiv' : ''}" data-aktion="${aktion}" data-wert="${wert}" aria-pressed="${aktiv}">${text}</button>`;
@@ -518,7 +533,7 @@ const ANSICHTEN = {
   einstellungen() {
     const p = daten.profil;
     const opt = (liste, wert) => liste.map(x => `<option value="${x.id}"${x.id === wert ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
-    const n = daten.verlauf.length;
+    const n = aufgabenVerlauf().length;
     return kopf('Einstellungen', ['gehe', 'start']) + `<main class="seite">
       <section class="gruppe">
         <h2 class="label">Profil</h2>
@@ -536,7 +551,7 @@ const ANSICHTEN = {
         <h2 class="label">Fortschritt</h2>
         <p>${n ? `${zahlText(n)} beantwortete ${n === 1 ? 'Aufgabe' : 'Aufgaben'}.` : 'Noch keine Aufgaben beantwortet.'} Alles bleibt nur auf diesem Gerät gespeichert.</p>
         <div class="knoepfe">
-          <button class="knopf gefahr" data-aktion="frage-loeschen"${n ? '' : ' disabled'}>Fortschritt löschen</button>
+          <button class="knopf gefahr" data-aktion="frage-loeschen"${daten.verlauf.length ? '' : ' disabled'}>Fortschritt löschen</button>
           <button class="knopf leise" data-aktion="frage-reset">Alles zurücksetzen</button>
         </div>
       </section>
@@ -796,6 +811,9 @@ const AKTIONEN = {
   'rk-start'() {
     if (rk && rk.phase === 'bereit') rkNaechstes();
   },
+  'rk-weiter'() {
+    if (rk && rk.phase === 'pause') rkNaechstes();
+  },
   'rk-abbrechen'() {
     if (rk.probe || !rk.ergebnisse.length) {
       clearTimeout(rk.timer);
@@ -833,6 +851,23 @@ document.addEventListener('change', e => {
   const weg = document.getElementById('e-termin-weg');
   if (feld === 'termin' && weg) weg.hidden = !daten.profil.termin;
   melde('Gespeichert');
+});
+
+let verstecktSeit = 0;
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    verstecktSeit = Date.now();
+    if (rk && ansicht.name === 'reaktion' && ['warten', 'signal', 'rueck'].includes(rk.phase)) {
+      clearTimeout(rk.timer);
+      rk.phase = 'pause';
+      zeichneReaktion();
+    }
+    return;
+  }
+  const weg = verstecktSeit ? Date.now() - verstecktSeit : 0;
+  verstecktSeit = 0;
+  if (sitzung && sitzung.aktuell && sitzung.aktuell.gewaehlt === null) sitzung.aktuell.start += weg;
 });
 
 document.addEventListener('pointerdown', e => {

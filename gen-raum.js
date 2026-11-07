@@ -229,7 +229,7 @@ function wuerfelAufgabe(n) {
     }
     if (falsche.length < 3) continue;
     const name = i => WSYMBOLE[richtig[i].sym].name;
-    const weg = [`Gegenüber liegen: ${H.und(gegenueberPaare(wuerfel))}.`, 'Gegenüberliegende Seiten sind nie gleichzeitig zu sehen.'];
+    const weg = [`Gegenüber liegen: ${gegenueberPaare(wuerfel).join('; ')}.`, 'Gegenüberliegende Seiten sind nie gleichzeitig zu sehen.'];
     if (n >= 3) weg.push('Achte auch darauf, in welche Richtung die Zeichen an den Kanten zeigen.');
     weg.push(`Der richtige Würfel zeigt oben ${name(0)}, links ${name(1)} und rechts ${name(2)}.`);
     return {
@@ -255,7 +255,7 @@ function faltvorlage(n) {
         frage: 'Welches Zeichen liegt nach dem Falten gegenüber der blauen Fläche?',
         bild: `<div class="bild-mitte">${netzSvg(zellen, belegung, markiert)}</div>`,
         ...S.optionen(symbolSvg(gegen), andere.map(symbolSvg)),
-        erklaerung: [`Gefaltet liegen sich gegenüber: ${H.und(gegenueberPaare(wuerfel))}.`, 'Tipp: In einer geraden Reihe liegt das übernächste Feld gegenüber.']
+        erklaerung: [`Gefaltet liegen sich gegenüber: ${gegenueberPaare(wuerfel).join('; ')}.`, 'Tipp: In einer geraden Reihe liegt das übernächste Feld gegenüber.']
       };
     }
   }
