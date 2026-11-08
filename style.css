@@ -1211,6 +1211,53 @@ svg {
   display: none;
 }
 
+.aufgabe-layout,
+.aufgabe-links,
+.aufgabe-rechts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (min-width: 900px) and (orientation: landscape) {
+  #app.breit {
+    max-width: 80rem;
+  }
+
+  .aufgabe-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .aufgabe-links {
+    position: sticky;
+    top: calc(4.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  .aufgabe-layout .antworten {
+    grid-template-columns: 1fr;
+  }
+
+  .aufgabe-layout .antworten-kurz {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .aufgabe-layout .antworten-bild {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .aufgabe-layout .bild {
+    margin-bottom: 0;
+  }
+
+  .aufgabe-layout .term,
+  .aufgabe-layout .reihe {
+    margin-bottom: 0.5rem;
+  }
+}
+
 [hidden] {
   display: none !important;
 }

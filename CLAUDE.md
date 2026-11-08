@@ -18,6 +18,7 @@
 - Läuft in Safari auf dem iPad, auch offline.
 - Fortschritt im localStorage, nur über `speicher.js`.
 - Feste Aufgaben, Bereiche und Typen in `aufgaben.js`. Generatoren in `gen-*.js`. Wo möglich per Generator erzeugen.
+- App-Code aufgeteilt: `kern.js` (Grundlagen), `uebung.js`, `reaktion.js`, `app.js` (Menüs, Bedienung). Neue Bereiche wie Prüfung und Statistik bekommen eigene Dateien.
 - Figuren, Matrizen und Würfel als SVG im Code zeichnen, keine Bilddateien.
 - Keine Kommentare im Code.
 - Design: mobile first, fürs iPad, große Buttons, dunkel, ruhig, gut lesbar. Timer sichtbar, aber nicht hektisch.

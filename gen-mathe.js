@@ -595,6 +595,7 @@ function rechenzeichen(n) {
         zeichen: { teile: [a, '?', b], ergebnis: c },
         antworten: OPS.slice(),
         richtig: OPS.indexOf(op),
+        reihenfolgeFest: true,
         erklaerung: [`${fz(a)} ${op} ${fz(b)} = ${fz(c)}`, 'Mit den anderen Zeichen kommt etwas anderes heraus.']
       };
     }

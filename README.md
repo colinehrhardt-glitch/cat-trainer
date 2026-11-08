@@ -25,7 +25,9 @@ Reines HTML, CSS und JavaScript. Kein Framework, kein Build-Schritt. Läuft in S
 - Nach jeder Antwort: Lösung und Lösungsweg, bei Zählaufgaben mit markierter Lösung
 - Schwierigkeit 1 bis 5 oder „Auto“ (Start nach Schulabschluss, zweimal richtig → schwerer, falsch → leichter)
 - Figuren, Matrizen, Würfel, Zahnräder, Hebel und Flaschenzüge werden als SVG im Code gezeichnet
-- Auswertung nach jeder Runde mit Fehlern zum Nachlesen
+- Auswertung nach jeder Runde mit Fehlern zum Nachlesen und „Fehler nochmal üben“
+- Auf dem iPad im Querformat: Frage und Bild links, Antworten rechts, ohne Scrollen
+- Reaktionstest und Übungszeit pausieren, wenn die App in den Hintergrund geht
 - Startseite, Onboarding und Speichern wie in Stufe 1
 
 Geplant: Stufe 3 (Prüfungssimulation mit Zeitlimit und Laufbahn-Empfehlung), Stufe 4 (Statistik und Lernplan).
@@ -55,7 +57,10 @@ Safari und die Home-Bildschirm-App haben getrennte Speicher.
 | `gen-konzentration.js` | Generatoren für Zeichen zählen, Symbole vergleichen und den Reaktionstest |
 | `aufgaben.js` | Bereiche, Aufgabentypen mit Erklärungen und alle festen Aufgaben |
 | `speicher.js` | Speichern im localStorage |
-| `app.js` | Bildschirme und Ablauf |
+| `kern.js` | Grundlagen: Zustand, Anzeige, Dialoge, gemeinsame Hilfen |
+| `uebung.js` | Übungsmodus: Aufgaben anzeigen, auswerten, Fehler wiederholen |
+| `reaktion.js` | Reaktionstest |
+| `app.js` | Startseite, Onboarding, Bereiche, Einstellungen und Bedienung |
 | `sw.js` | Offline-Speicher (Service Worker) |
 | `manifest.webmanifest`, `icons/` | Für „Zum Home-Bildschirm“ |
 
@@ -86,4 +91,4 @@ Feste Aufgaben werden mit den automatisch erzeugten Aufgaben gemischt. Typen ohn
 
 ## Nach Änderungen
 
-In `sw.js` die Versionsnummer in `VERSION` erhöhen (z. B. `cat-trainer-3`), damit die Offline-Version aktualisiert wird.
+In `sw.js` die Versionsnummer in `VERSION` erhöhen (z. B. `cat-trainer-5`), damit die Offline-Version aktualisiert wird.

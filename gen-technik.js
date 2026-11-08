@@ -135,6 +135,7 @@ function zahnradRichtung(n) {
     bild: `<div class="bild-mitte">${S.svg(breite, hoehe - oben, `<g transform="translate(0 ${-oben})">${bild}</g>`, 'technik')}</div>`,
     antworten: RICHTUNGEN.slice(),
     richtig: loesung,
+    reihenfolgeFest: true,
     erklaerung: weg
   };
 }
@@ -267,6 +268,7 @@ function hebel(n) {
         bild: wippeSvg(links.map(g => ({ d: g.d, text: g.m + ' kg' })), rechts.map(g => ({ d: g.d, text: g.m + ' kg' }))),
         antworten: ['Die linke Seite', 'Die rechte Seite', 'Keine, sie bleibt im Gleichgewicht', 'Das hängt von der Länge der Wippe ab'],
         richtig: loesung,
+        reihenfolgeFest: true,
         erklaerung: ['Rechne für jede Seite Gewicht × Abstand und addiere.', `Links: ${t(links)} = ${ml}`, `Rechts: ${t(rechts)} = ${mr}`, loesung === 2 ? 'Beide Seiten sind gleich, also Gleichgewicht.' : `Die ${loesung === 0 ? 'linke' : 'rechte'} Seite ist größer und senkt sich.`]
       };
     }

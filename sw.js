@@ -1,4 +1,4 @@
-const VERSION = 'cat-trainer-3';
+const VERSION = 'cat-trainer-4';
 const DATEIEN = [
   './',
   'index.html',
@@ -12,6 +12,9 @@ const DATEIEN = [
   'gen-konzentration.js',
   'aufgaben.js',
   'speicher.js',
+  'kern.js',
+  'uebung.js',
+  'reaktion.js',
   'app.js',
   'manifest.webmanifest',
   'icons/icon-180.png',
