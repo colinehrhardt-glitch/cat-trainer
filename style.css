@@ -1211,6 +1211,226 @@ svg {
   display: none;
 }
 
+.ausweise {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.ausweis {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+}
+
+.ausweis-name {
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.ausweis dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 1rem;
+}
+
+.ausweis dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ausweis dt {
+  color: var(--text-2);
+}
+
+.ausweis dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.merk-kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.merk-zeit {
+  flex: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: var(--akzent-zart);
+  color: var(--akzent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.merk-knoepfe {
+  margin-top: 1rem;
+}
+
+.fig .fu { stroke: var(--text); stroke-width: 2; stroke-linecap: square; }
+.fig .fg { stroke: var(--grund); stroke-width: 1; opacity: 0.6; }
+.fig .fo { fill: var(--flaeche-2); }
+.fig .ft { fill: var(--akzent); }
+.fig .ft0 { fill: var(--akzent); }
+.fig .ft1 { fill: var(--orange); }
+.fig .ft2 { fill: var(--gut); }
+.fig .ft3 { fill: var(--text-2); }
+.fig .fk { fill: var(--text-2); font-weight: 600; }
+
+.bild-mitte .teile {
+  max-width: 26rem;
+}
+
+.antwort.gewaehlt {
+  border-color: var(--akzent);
+  background: var(--akzent-zart);
+}
+
+.antwort.gewaehlt .buchstabe {
+  background: var(--akzent);
+  color: var(--akzent-dunkel);
+}
+
+.pr-weiter {
+  margin-top: 0.9rem;
+}
+
+.zeitbalken {
+  height: 6px;
+}
+
+.zeitbalken span {
+  transition: width 0.25s linear;
+}
+
+.zeitbalken span.spaet {
+  background: var(--orange);
+}
+
+.segment-gross {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-height: 4rem;
+}
+
+.segment-gross span {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.regeln,
+.stationen {
+  margin: 0;
+  padding-left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ziel-urteil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+  background: var(--flaeche);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.ziel-urteil.gut {
+  border-color: var(--gut);
+  background: var(--gut-zart);
+}
+
+.ziel-urteil.knapp {
+  border-color: var(--warn);
+  background: var(--warn-zart);
+}
+
+.ziel-urteil.schlecht {
+  border-color: var(--schlecht);
+  background: var(--schlecht-zart);
+}
+
+.status {
+  font-weight: 700;
+}
+
+.status.gut {
+  color: var(--gut);
+}
+
+.status.knapp {
+  color: var(--warn);
+}
+
+.status.schlecht {
+  color: var(--schlecht);
+}
+
+.tipps {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 760px) {
+  .tipps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.tipp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+}
+
+.tipp p {
+  flex: 1;
+  font-size: 1rem;
+}
+
+.tipp-titel {
+  font-weight: 700;
+}
+
+.bereich-nachlesen > summary {
+  padding: 0.85rem 0.2rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bereich-nachlesen .fehlerliste {
+  padding-bottom: 0.75rem;
+}
+
+.ok-zeichen {
+  color: var(--gut);
+  font-weight: 700;
+}
+
+.nok-zeichen {
+  color: var(--schlecht);
+  font-weight: 700;
+}
+
 .aufgabe-layout,
 .aufgabe-links,
 .aufgabe-rechts {

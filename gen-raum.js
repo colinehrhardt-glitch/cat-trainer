@@ -343,3 +343,174 @@ function drehfigur(n) {
     };
   }
 }
+
+function teileFigur(zellen, k) {
+  const schl = z => z[0] + ',' + z[1];
+  const im = new Set(zellen.map(schl));
+  for (let v = 0; v < 200; v++) {
+    const zu = new Map();
+    const teile = H.mische(zellen).slice(0, k).map((z, i) => {
+      zu.set(schl(z), i);
+      return [z];
+    });
+    let rest = zellen.length - k;
+    for (let schutz = 0; rest > 0 && schutz < 800; schutz++) {
+      const i = H.zufall(0, k - 1);
+      const kandidaten = [];
+      teile[i].forEach(([c, r]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dc, dr]) => {
+        const nb = [c + dc, r + dr];
+        if (im.has(schl(nb)) && !zu.has(schl(nb))) kandidaten.push(nb);
+      }));
+      if (!kandidaten.length) continue;
+      const nb = H.wahl(kandidaten);
+      zu.set(schl(nb), i);
+      teile[i].push(nb);
+      rest--;
+    }
+    if (rest === 0 && teile.every(t => t.length >= 2)) return teile.map(normiere);
+  }
+  return null;
+}
+
+function drehvarianten(teil) {
+  const liste = [];
+  let z = normiere(teil);
+  for (let k = 0; k < 4; k++) {
+    if (!liste.some(x => JSON.stringify(x) === JSON.stringify(z))) liste.push(z);
+    z = normiere(z.map(([c, r]) => [-r, c]));
+  }
+  return liste;
+}
+
+function lege(teile, ziel) {
+  const schl = z => z[0] + ',' + z[1];
+  if (teile.reduce((s, t) => s + t.length, 0) !== ziel.length) return null;
+  const zielSet = new Set(ziel.map(schl));
+  const varianten = teile.map(drehvarianten);
+  const belegt = new Map();
+  const sortiert = ziel.slice().sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+  const benutzt = teile.map(() => false);
+  const versuche = () => {
+    const frei = sortiert.find(z => !belegt.has(schl(z)));
+    if (!frei) return true;
+    for (let i = 0; i < teile.length; i++) {
+      if (benutzt[i]) continue;
+      for (const v of varianten[i]) {
+        const dc = frei[0] - v[0][0], dr = frei[1] - v[0][1];
+        const zellen = v.map(([c, r]) => [c + dc, r + dr]);
+        if (!zellen.every(z => zielSet.has(schl(z)) && !belegt.has(schl(z)))) continue;
+        zellen.forEach(z => belegt.set(schl(z), i));
+        benutzt[i] = true;
+        if (versuche()) return true;
+        zellen.forEach(z => belegt.delete(schl(z)));
+        benutzt[i] = false;
+      }
+    }
+    return false;
+  };
+  return versuche() ? belegt : null;
+}
+
+function verschiebeZelle(ziel, maxSeite) {
+  for (let v = 0; v < 100; v++) {
+    const z = ziel.slice();
+    z.splice(H.zufall(0, z.length - 1), 1);
+    const [c, r] = H.wahl(z);
+    const [dc, dr] = H.wahl([[1, 0], [-1, 0], [0, 1], [0, -1]]);
+    if (z.some(x => x[0] === c + dc && x[1] === r + dr)) continue;
+    z.push([c + dc, r + dr]);
+    const nz = normiere(z);
+    if (!zusammenhaengend(nz)) continue;
+    if (Math.max(...nz.map(x => x[0])) >= maxSeite || Math.max(...nz.map(x => x[1])) >= maxSeite) continue;
+    return nz;
+  }
+  return null;
+}
+
+function flaecheSvg(zellen, G, klasse, gitter, x0, y0, klasseVon) {
+  const s = new Set(zellen.map(z => z[0] + ',' + z[1]));
+  let t = '';
+  zellen.forEach(([c, r]) => {
+    t += `<rect x="${x0 + c * G}" y="${y0 + r * G}" width="${G}" height="${G}" class="${klasseVon ? klasseVon(c, r) : klasse}"/>`;
+  });
+  zellen.forEach(([c, r]) => {
+    const x = x0 + c * G, y = y0 + r * G;
+    [[0, -1, x, y, x + G, y], [1, 0, x + G, y, x + G, y + G], [0, 1, x, y + G, x + G, y + G], [-1, 0, x, y, x, y + G]].forEach(([dc, dr, a, b, cc, d]) => {
+      const aussen = !s.has((c + dc) + ',' + (r + dr));
+      if (aussen) t += `<line x1="${a}" y1="${b}" x2="${cc}" y2="${d}" class="fu"/>`;
+      else if (gitter && (dc === 1 || dr === 1)) t += `<line x1="${a}" y1="${b}" x2="${cc}" y2="${d}" class="fg"/>`;
+    });
+  });
+  return t;
+}
+
+function formSvg(zellen, gitter) {
+  const G = 16;
+  const b = (Math.max(...zellen.map(z => z[0])) + 1) * G, h = (Math.max(...zellen.map(z => z[1])) + 1) * G;
+  return S.svg(100, 100, flaecheSvg(zellen, G, 'fo', gitter, (100 - b) / 2, (100 - h) / 2), 'form-bild');
+}
+
+function hatLoch(zellen) {
+  const breite = Math.max(...zellen.map(z => z[0])) + 3, hoehe = Math.max(...zellen.map(z => z[1])) + 3;
+  const voll = new Set(zellen.map(([c, r]) => (c + 1) + ',' + (r + 1)));
+  const aussen = new Set(['0,0']);
+  const warte = [[0, 0]];
+  while (warte.length) {
+    const [c, r] = warte.pop();
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dc, dr]) => {
+      const nc = c + dc, nr = r + dr, k = nc + ',' + nr;
+      if (nc < 0 || nr < 0 || nc >= breite || nr >= hoehe || voll.has(k) || aussen.has(k)) return;
+      aussen.add(k);
+      warte.push([nc, nr]);
+    });
+  }
+  return aussen.size + voll.size < breite * hoehe;
+}
+
+function figurenZusammensetzen(n) {
+  const [groesse, anzahlTeile, gitter] = [[6, 2, true], [8, 3, true], [8, 3, false], [10, 3, false], [12, 4, false]][n - 1];
+  const maxSeite = n <= 2 ? 4 : 5;
+  const keine = Math.random() < 0.2;
+  for (;;) {
+    const ziel = wachse(groesse, maxSeite);
+    if (hatLoch(ziel)) continue;
+    const teile = teileFigur(ziel, anzahlTeile);
+    if (!teile) continue;
+    const formen = new Set([formSchluessel(ziel, false)]);
+    const falsche = [];
+    for (let v = 0; v < 300 && falsche.length < (keine ? 4 : 3); v++) {
+      const d = Math.random() < 0.7 ? verschiebeZelle(ziel, maxSeite) : wachse(groesse, maxSeite);
+      if (!d || hatLoch(d)) continue;
+      const k = formSchluessel(d, false);
+      if (formen.has(k) || lege(teile, d)) continue;
+      formen.add(k);
+      falsche.push(d);
+    }
+    if (falsche.length < (keine ? 4 : 3)) continue;
+    const G = 18;
+    let x = 4, inhalt = '', hoehe = 0;
+    teile.forEach(t => {
+      const v = H.wahl(drehvarianten(t));
+      inhalt += flaecheSvg(v, G, 'ft', gitter, x, 4);
+      x += (Math.max(...v.map(z => z[0])) + 1) * G + G;
+      hoehe = Math.max(hoehe, (Math.max(...v.map(z => z[1])) + 1) * G);
+    });
+    const belegung = lege(teile, ziel);
+    const zb = (Math.max(...ziel.map(z => z[0])) + 1) * 22, zh = (Math.max(...ziel.map(z => z[1])) + 1) * 22;
+    const loesung = S.svg(zb + 8, zh + 8, flaecheSvg(ziel, 22, '', true, 4, 4, (c, r) => 'ft' + belegung.get(c + ',' + r)), 'netz');
+    const liste = keine ? H.mische(falsche) : H.mische([ziel].concat(falsche));
+    const keineSvg = S.svg(100, 100, S.text(50, 40, 'Keine der', 'fk', 14) + S.text(50, 60, 'Figuren', 'fk', 14), 'form-bild');
+    return {
+      frage: 'Welche Figur lässt sich aus allen Teilen zusammensetzen? Die Teile dürfen gedreht werden.',
+      bild: `<div class="bild-mitte">${S.svg(x - G + 4, hoehe + 8, inhalt, 'teile')}</div>`,
+      antworten: liste.map(z => formSvg(z, gitter)).concat([keineSvg]),
+      richtig: keine ? 4 : liste.indexOf(ziel),
+      svg: true,
+      reihenfolgeFest: true,
+      erklaerung: keine
+        ? ['Keine der vier Figuren lässt sich aus den Teilen legen.', 'So passen die Teile zusammen:']
+        : [`Alle Teile zusammen haben ${groesse} Kästchen.`, 'Nur eine Figur lässt sich lückenlos aus den gedrehten Teilen legen:'],
+      loesungsbild: `<div class="bild-mitte">${loesung}</div>`
+    };
+  }
+}

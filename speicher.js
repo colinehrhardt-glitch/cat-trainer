@@ -3,7 +3,7 @@ const Speicher = (() => {
   const MAX = 10000;
 
   function leer() {
-    return { version: 1, profil: null, einstellungen: { niveau: 'auto', anzahl: 10 }, verlauf: [] };
+    return { version: 1, profil: null, einstellungen: { niveau: 'auto', anzahl: 10, pruefungLaenge: 'mittel' }, verlauf: [], pruefungen: [] };
   }
 
   function laden() {
@@ -16,7 +16,8 @@ const Speicher = (() => {
         version: 1,
         profil: d.profil || null,
         einstellungen: Object.assign(l.einstellungen, d.einstellungen),
-        verlauf: Array.isArray(d.verlauf) ? d.verlauf : []
+        verlauf: Array.isArray(d.verlauf) ? d.verlauf : [],
+        pruefungen: Array.isArray(d.pruefungen) ? d.pruefungen : []
       };
     } catch (e) {
       return leer();
@@ -26,6 +27,7 @@ const Speicher = (() => {
   function speichern(d) {
     try {
       if (d.verlauf.length > MAX) d.verlauf = d.verlauf.slice(-MAX);
+      if (d.pruefungen.length > 50) d.pruefungen = d.pruefungen.slice(-50);
       localStorage.setItem(SCHLUESSEL, JSON.stringify(d));
       return true;
     } catch (e) {

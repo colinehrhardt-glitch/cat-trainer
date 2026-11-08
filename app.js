@@ -65,7 +65,7 @@ Object.assign(ANSICHTEN, {
       </section>
       <nav class="kacheln">
         <button class="kachel haupt" data-aktion="gehe" data-wert="ueben"><span class="kachel-titel">Üben${SYMBOLE.pfeil}</span><span class="kachel-text">Bereich wählen, ohne Zeitlimit, mit Lösungsweg nach jeder Aufgabe.</span></button>
-        ${kachel('Prüfung simulieren', 'Alle Bereiche mit Zeitlimit und anpassender Schwierigkeit.')}
+        ${pruefungsKachel()}
         ${kachel('Statistik', 'Trefferquote, Tempo und Verlauf pro Bereich.')}
         ${kachel('Lernplan', 'Tägliche Einheiten bis zum Testtag.')}
       </nav>
@@ -149,7 +149,36 @@ Object.assign(ANSICHTEN, {
   }
 });
 
+function pruefungsKachel() {
+  const letzte = daten.pruefungen[daten.pruefungen.length - 1];
+  const art = PRUEFUNG_ARTEN[pruefungsArt()].name;
+  const zusatz = letzte ? `Letzte Prüfung: ${letzte.punkte} von 100 Punkten (${new Date(letzte.d).toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric', year: 'numeric' })})` : 'Alle Bereiche mit Zeitlimit und anpassender Schwierigkeit.';
+  return `<button class="kachel" data-aktion="gehe" data-wert="pruefung-start"><span class="kachel-titel">Prüfung simulieren</span><span class="kachel-text">${esc(art)}. ${esc(zusatz)}</span></button>`;
+}
+
+Object.assign(ANSICHTEN, {
+  'ksk-wahl'() {
+    return `<main class="seite willkommen">
+      <div class="marke-gross">CAT-Trainer</div>
+      <h1>Wie willst du zum KSK?</h1>
+      <p class="text-2">Als Feldwebel machst du den CAT im Karrierecenter. Als Offizier machst du den Computertest im Assessmentcenter in Köln. Danach richtet sich deine Prüfungssimulation.</p>
+      <div class="liste">
+        <button class="wahl" data-aktion="ksk-wahl" data-wert="ksk-feldwebel">KSK als Feldwebel</button>
+        <button class="wahl" data-aktion="ksk-wahl" data-wert="ksk-offizier">KSK als Offizier</button>
+      </div>
+      <p class="klein">Du kannst das später in den Einstellungen ändern.</p>
+    </main>`;
+  }
+});
+
 Object.assign(AKTIONEN, {
+  'ksk-wahl'(w) {
+    daten.profil.ziel = w;
+    speichern();
+    zeige('start');
+  },
+
+
   'ob-start'() {
     entwurf = {};
     zeige('onboarding', { schritt: 1 });
@@ -275,7 +304,7 @@ document.addEventListener('visibilitychange', () => {
   }
   const weg = verstecktSeit ? Date.now() - verstecktSeit : 0;
   verstecktSeit = 0;
-  if (sitzung && sitzung.aktuell && sitzung.aktuell.gewaehlt === null) sitzung.aktuell.start += weg;
+  BEI_RUECKKEHR.forEach(f => f(weg));
 });
 
 document.addEventListener('pointerdown', e => {
@@ -303,7 +332,7 @@ document.addEventListener('keydown', e => {
   if (i < 0) i = ['a', 'b', 'c', 'd', 'e', 'f'].indexOf(taste);
   if (i < 0) return;
   if (ansicht.name === 'aufgabe' && sitzung.aktuell.gewaehlt === null && i < sitzung.aktuell.aufgabe.antworten.length) antworte(i);
-  if (ansicht.name === 'intro' && ansicht.bspWahl === null && i < ansicht.beispiel.antworten.length) AKTIONEN.bsp(String(i));
+  if (ansicht.name === 'intro' && ansicht.beispiel && ansicht.bspWahl === null && i < ansicht.beispiel.antworten.length) AKTIONEN.bsp(String(i));
 });
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
@@ -311,5 +340,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
+
+if (daten.profil && daten.profil.ziel === 'ksk') ansicht = { name: 'ksk-wahl' };
 
 render();

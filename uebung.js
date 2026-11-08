@@ -2,7 +2,7 @@ function aufgabeBild(a) {
   if (a.term) return `<div class="term${/[a-zäöüß]{2}/i.test(a.term) ? ' term-wort' : ''}">${esc(a.term)}</div>`;
   if (a.reihe) return `<div class="reihe">${a.reihe.map(z => `<span class="zahl">${esc(H.zahl(z))}</span>`).join('')}<span class="zahl offen">?</span></div>`;
   if (a.zeichen) return `<div class="term">${a.zeichen.teile.map(x => (x === '?' ? '<span class="luecke">?</span>' : esc(H.zahl(x)))).join(' ')} = ${esc(H.zahl(a.zeichen.ergebnis))}</div>`;
-  if (a.text) return `<div class="satz">${esc(a.text).replace('___', '<span class="satz-luecke">?</span>')}</div>`;
+  if (a.text) return `<div class="satz">${esc(a.text).replace('___', '<span class="satz-luecke">?</span>').replace(/\n/g, '<br>')}</div>`;
   if (a.bild) return `<div class="bild">${a.bild}</div>`;
   return '';
 }
@@ -30,6 +30,10 @@ function aufgabeHtml(a, wahl, aktion, nachher) {
 
 function neuGemischt(a) {
   const kopie = Object.assign({}, a);
+  if (a.merkenQuelle) {
+    kopie.merken = a.merkenQuelle;
+    kopie.weitere = null;
+  }
   if (a.reihenfolgeFest) return kopie;
   const reihenfolge = H.mische(a.antworten.map((_, i) => i));
   kopie.antworten = reihenfolge.map(i => a.antworten[i]);
@@ -97,15 +101,33 @@ function starteSitzung() {
   naechsteAufgabe();
 }
 
+function folgeAufgaben(aufgabe, platz) {
+  return (aufgabe.weitere || []).slice(0, Math.max(0, platz)).map(w => Object.assign(w, { typ: aufgabe.typ, niveau: aufgabe.niveau }));
+}
+
+function neuerStand(aufgabe) {
+  const merken = !!aufgabe.merken;
+  return { aufgabe, gewaehlt: null, start: Date.now(), ms: 0, richtig: false, merkPhase: merken, merkEnde: merken ? Date.now() + aufgabe.merken.sekunden * 1000 : 0 };
+}
+
+function merkHtml(merken, rest, aktion, knopfText) {
+  return `<div class="merk-kopf"><div class="frage">Präge dir diese Ausweise ein. Danach werden sie ausgeblendet.</div>${rest === null ? '' : `<div class="merk-zeit" id="merk-zeit">${rest} s</div>`}</div>
+    ${merken.html}
+    <div class="knoepfe merk-knoepfe"><button class="knopf primaer" data-aktion="${aktion}">${knopfText}</button></div>`;
+}
+
 function naechsteAufgabe() {
   let aufgabe;
   if (sitzung.wiederholung) {
     aufgabe = sitzung.wiederholung[sitzung.liste.length];
+  } else if (sitzung.warteschlange && sitzung.warteschlange.length) {
+    aufgabe = sitzung.warteschlange.shift();
   } else {
     if (!sitzung.beutel.length) sitzung.beutel = H.mische(sitzung.typen);
     aufgabe = neueAufgabe(sitzung.beutel.pop(), sitzung.niveau, sitzung.gesehen);
+    sitzung.warteschlange = folgeAufgaben(aufgabe, sitzung.anzahl - sitzung.liste.length - 1);
   }
-  sitzung.aktuell = { aufgabe, gewaehlt: null, start: Date.now(), ms: 0, richtig: false };
+  sitzung.aktuell = neuerStand(aufgabe);
   zeige('aufgabe');
 }
 
@@ -119,7 +141,7 @@ function starteWiederholung() {
 
 function antworte(i) {
   const a = sitzung.aktuell;
-  if (a.gewaehlt !== null) return;
+  if (a.gewaehlt !== null || a.merkPhase) return;
   a.ms = Date.now() - a.start;
   a.gewaehlt = i;
   a.richtig = i === a.aufgabe.richtig;
@@ -153,11 +175,12 @@ Object.assign(ANSICHTEN, {
       : TYPEN[t].erklaerung;
     const bsp = ansicht.beispiel;
     const fertig = ansicht.bspWahl !== null;
+    const merkOffen = bsp.merken && !ansicht.bspGemerkt;
     return kopf(typName(t), ['gehe', 'bereich']) + `<main class="seite">
       <section class="einleitung"><h1>${esc(typName(t))}</h1>${text.map(p => `<p>${esc(p)}</p>`).join('')}</section>
       <section class="beispiel">
         <div class="label">Beispielaufgabe${t === 'mix' ? ` · ${esc(typName(bsp.typ))}` : ''}</div>
-        ${aufgabeHtml(bsp, ansicht.bspWahl, 'bsp', fertig ? rueckmeldungHtml(bsp, ansicht.bspWahl, '') : '')}
+        ${merkOffen ? merkHtml(bsp.merken, null, 'bsp-gemerkt', 'Weiter zur Frage') : aufgabeHtml(bsp, ansicht.bspWahl, 'bsp', fertig ? rueckmeldungHtml(bsp, ansicht.bspWahl, '') : '')}
       </section>
       <div class="knoepfe"><button class="knopf ${fertig ? 'primaer' : ''}" data-aktion="los">${fertig ? 'Übung starten' : 'Beispiel überspringen und starten'}</button></div>
     </main>`;
@@ -170,12 +193,12 @@ Object.assign(ANSICHTEN, {
     const nr = s.liste.length + (fertig ? 0 : 1);
     const letzte = fertig && s.liste.length >= s.anzahl;
     const knopf = `<button class="knopf primaer" data-aktion="weiter">${letzte ? 'Zur Auswertung' : 'Weiter'}</button>`;
-    const rechts = `<div class="uhr" id="uhr" aria-label="Benötigte Zeit">${zeitText(fertig ? a.ms : Date.now() - a.start)}</div>`;
+    const rechts = `<div class="uhr" id="uhr" aria-label="Benötigte Zeit">${zeitText(fertig ? a.ms : a.merkPhase ? 0 : Date.now() - a.start)}</div>`;
     const kopfzeile = `<header class="kopf"><button class="symbol" data-aktion="abbrechen" aria-label="Übung beenden">${SYMBOLE.schliessen}</button><div class="kopf-titel">${s.wiederholung ? 'Wiederholung' : 'Aufgabe'} ${nr} von ${s.anzahl}</div>${rechts}</header>`;
     return kopfzeile + `<div class="balken" aria-hidden="true"><span style="width:${100 * s.liste.length / s.anzahl}%"></span></div>
       <main class="seite">
         <div class="meta"><span>${esc(typName(a.aufgabe.typ))}</span>${niveauHtml(a.aufgabe.niveau)}</div>
-        ${aufgabeHtml(a.aufgabe, a.gewaehlt, 'antwort', fertig ? rueckmeldungHtml(a.aufgabe, a.gewaehlt, knopf) : '')}
+        ${a.merkPhase ? merkHtml(a.aufgabe.merken, Math.max(0, Math.ceil((a.merkEnde - Date.now()) / 1000)), 'gemerkt', 'Ich habe sie mir gemerkt') : aufgabeHtml(a.aufgabe, a.gewaehlt, 'antwort', fertig ? rueckmeldungHtml(a.aufgabe, a.gewaehlt, knopf) : '')}
       </main>`;
   },
 
@@ -231,7 +254,7 @@ Object.assign(AKTIONEN, {
   },
 
   bsp(w) {
-    if (ansicht.bspWahl !== null) return;
+    if (ansicht.bspWahl !== null || (ansicht.beispiel.merken && !ansicht.bspGemerkt)) return;
     ansicht.bspWahl = Number(w);
     render();
     zeigeRueckmeldung();
@@ -271,5 +294,42 @@ Object.assign(AKTIONEN, {
 
   'fehler-wiederholen'() {
     starteWiederholung();
+  },
+
+  gemerkt() {
+    const a = sitzung && sitzung.aktuell;
+    if (!a || !a.merkPhase) return;
+    a.merkPhase = false;
+    a.start = Date.now();
+    render();
+  },
+
+  'bsp-gemerkt'() {
+    ansicht.bspGemerkt = true;
+    render();
   }
+});
+
+NACH_RENDER.push(() => {
+  if (ansicht.name !== 'aufgabe' || !sitzung || sitzung.aktuell.gewaehlt !== null) return;
+  uhr = setInterval(() => {
+    const a = sitzung && sitzung.aktuell;
+    if (!a || ansicht.name !== 'aufgabe') return;
+    if (a.merkPhase) {
+      const rest = Math.max(0, Math.ceil((a.merkEnde - Date.now()) / 1000));
+      const el = document.getElementById('merk-zeit');
+      if (el) el.textContent = rest + ' s';
+      if (rest <= 0) AKTIONEN.gemerkt();
+      return;
+    }
+    const el = document.getElementById('uhr');
+    if (el && a.gewaehlt === null) el.textContent = zeitText(Date.now() - a.start);
+  }, 250);
+});
+
+BEI_RUECKKEHR.push(weg => {
+  const a = sitzung && sitzung.aktuell;
+  if (!a || a.gewaehlt !== null) return;
+  if (a.merkPhase) a.merkEnde += weg;
+  else a.start += weg;
 });

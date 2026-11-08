@@ -1,10 +1,10 @@
 const BEREICHE = [
-  { id: 'sprache', name: 'Sprache', info: 'Rechtschreibung, Analogien, Wortbedeutung und Englisch.', typen: ['rechtschreibung', 'analogien', 'wortbedeutung', 'englisch'] },
+  { id: 'sprache', name: 'Sprache', info: 'Rechtschreibung, Analogien, Wortbedeutung, Englisch und Wortflüssigkeit.', typen: ['rechtschreibung', 'analogien', 'wortbedeutung', 'englisch', 'wortfluessigkeit'] },
   { id: 'mathe', name: 'Mathematik', info: 'Rechnen, Prozente, Dreisatz und Textaufgaben.', typen: ['grundrechnen', 'prozent', 'dreisatz', 'textaufgaben', 'rechenzeichen'] },
-  { id: 'logik', name: 'Logisches Denken', info: 'Zahlenreihen, Figurenreihen und Matrizen.', typen: ['zahlenreihen', 'figurenreihen', 'matrizen'] },
-  { id: 'raum', name: 'Räumliches Vorstellungsvermögen', info: 'Würfel, Faltvorlagen und gedrehte Figuren.', typen: ['wuerfel', 'faltvorlagen', 'drehfiguren'] },
+  { id: 'logik', name: 'Logisches Denken', info: 'Zahlenreihen, Figurenreihen, Matrizen und Schlussfolgerungen.', typen: ['zahlenreihen', 'figurenreihen', 'matrizen', 'schlussfolgerungen'] },
+  { id: 'raum', name: 'Räumliches Vorstellungsvermögen', info: 'Würfel, Faltvorlagen, gedrehte Figuren und Figuren zusammensetzen.', typen: ['wuerfel', 'faltvorlagen', 'drehfiguren', 'figurenzusammensetzen'] },
   { id: 'technik', name: 'Technisches Verständnis', info: 'Zahnräder, Hebel, Flaschenzüge und Physik.', typen: ['zahnraeder', 'hebel', 'flaschenzuege', 'physik'] },
-  { id: 'konzentration', name: 'Konzentration und Reaktion', info: 'Zeichen zählen, Symbole vergleichen und Reaktionstest.', typen: ['zeichenzaehlen', 'symbolvergleich', 'reaktion'] },
+  { id: 'konzentration', name: 'Konzentration, Merkfähigkeit und Reaktion', info: 'Zeichen zählen, Symbole vergleichen, Ausweise merken und Reaktionstest.', typen: ['zeichenzaehlen', 'symbolvergleich', 'merkfaehigkeit', 'reaktion'] },
   { id: 'wissen', name: 'Allgemeinwissen', info: 'Allgemeinbildung und Grundwissen Bundeswehr.', typen: ['allgemeinwissen', 'bundeswehr'] }
 ];
 
@@ -38,6 +38,26 @@ const TYPEN = {
     name: 'Zahlenreihen',
     erklaerung: ['Die Zahlen folgen einer festen Regel.', 'Finde die Regel und wähle die Zahl, die als Nächstes kommt.'],
     erzeuge: n => zahlenreihe(n)
+  },
+  schlussfolgerungen: {
+    name: 'Schlussfolgerungen',
+    erklaerung: ['Zwei Aussagen sind vorgegeben. Sie gelten, auch wenn sie seltsam klingen.', 'Wähle die Schlussfolgerung, die immer gilt. Wenn keine sicher folgt, wähle „Keine der Schlussfolgerungen ist richtig“.', '„Einige“ heißt: mindestens einer, vielleicht auch alle.'],
+    erzeuge: n => schlussfolgerung(n)
+  },
+  wortfluessigkeit: {
+    name: 'Wortflüssigkeit',
+    erklaerung: ['Die Buchstaben eines Wortes sind durcheinander.', 'Finde das Wort und wähle seinen Anfangsbuchstaben. Steht er nicht dabei, wähle „Keine der Antworten ist richtig“.'],
+    erzeuge: n => wortfluessigkeit(n)
+  },
+  figurenzusammensetzen: {
+    name: 'Figuren zusammensetzen',
+    erklaerung: ['Du siehst mehrere Einzelteile.', 'Wähle die Figur, die sich aus allen Teilen lückenlos legen lässt. Die Teile dürfen gedreht, aber nicht gespiegelt werden.'],
+    erzeuge: n => figurenZusammensetzen(n)
+  },
+  merkfaehigkeit: {
+    name: 'Merkfähigkeit',
+    erklaerung: ['Du siehst einige Ausweise mit Name, Geburtstag, Blutgruppe, Allergie und Nummer.', 'Präge sie dir ein. Danach werden sie ausgeblendet und du beantwortest Fragen dazu.'],
+    erzeuge: n => merkfaehigkeit(n)
   },
   rechtschreibung: {
     name: 'Rechtschreibung',
@@ -417,4 +437,12 @@ const FESTE_AUFGABEN = [
   { typ: 'bundeswehr', niveau: 5, frage: 'Wo ist die Offizierschule des Heeres?', antworten: ['Dresden', 'Fürstenfeldbruck', 'Flensburg', 'Hannover'], erklaerung: ['Die Offizierschule des Heeres ist in Dresden. Fürstenfeldbruck: Luftwaffe, Flensburg: Marine.'] },
   { typ: 'bundeswehr', niveau: 5, frage: 'In welchem Jahr trat die Bundesrepublik Deutschland der NATO bei?', antworten: ['1955', '1949', '1990', '1961'], erklaerung: ['Die Bundesrepublik trat 1955 der NATO bei.'] },
   { typ: 'bundeswehr', niveau: 5, frage: 'Was leisten Berufs- und Zeitsoldaten zu Beginn ihres Dienstes?', antworten: ['Einen Eid', 'Ein feierliches Gelöbnis', 'Eine Unterschrift beim Kommandeur', 'Eine Prüfung'], erklaerung: ['Berufs- und Zeitsoldaten leisten einen Eid. Freiwillig Wehrdienstleistende legen ein feierliches Gelöbnis ab.'] }
+];
+
+const WORTLISTE = [
+  'BLUME', 'WOLKE', 'SONNE', 'APFEL', 'TISCH', 'STUHL', 'KERZE', 'BIRNE', 'HONIG', 'KATZE', 'TIGER', 'PFERD', 'VOGEL', 'ZEBRA', 'BRIEF', 'JACKE', 'SOCKE', 'NUDEL', 'WIESE', 'STERN', 'KREIS', 'PLATZ', 'MUSIK', 'FARBE', 'BESEN', 'ZWERG', 'HAFEN', 'KANNE', 'PAUSE', 'RADIO',
+  'GARTEN', 'KUCHEN', 'TELLER', 'DRACHE', 'SCHULE', 'BRUDER', 'WINTER', 'SOMMER', 'HAMMER', 'ZUCKER', 'KAFFEE', 'KARTON', 'KOFFER', 'BANANE', 'TOMATE', 'KISSEN', 'BALLON', 'KAMERA', 'LEHRER', 'PANZER', 'SOLDAT', 'GEMÜSE', 'BRÜCKE', 'MESSER', 'BUTTER', 'FLÜGEL',
+  'FENSTER', 'FLASCHE', 'ZWIEBEL', 'SPIEGEL', 'TEPPICH', 'KOMPASS', 'GITARRE', 'SCHIENE', 'ELEFANT', 'PINGUIN', 'FAHRRAD', 'KASERNE', 'UNIFORM', 'TELEFON', 'GEBIRGE', 'TROMMEL', 'ZEITUNG', 'KLAVIER', 'DECKEL', 'FREUND',
+  'TROMPETE', 'MATRATZE', 'RUCKSACK', 'SCHRAUBE', 'KALENDER', 'COMPUTER', 'SCHAUFEL', 'MAULWURF', 'KRAWATTE', 'GEWITTER', 'HANDTUCH', 'SCHNECKE', 'FEUERWEHR', 'KÜHLSCHRANK',
+  'BLEISTIFT', 'KARTOFFEL', 'FLUGHAFEN', 'SCHLITTEN', 'FERNSEHER', 'BRATWURST', 'FAHRSTUHL', 'REGENBOGEN', 'TANKSTELLE', 'SCHOKOLADE', 'KRANKENHAUS', 'HUBSCHRAUBER', 'TASCHENLAMPE', 'WASSERHAHN', 'SCHMETTERLING'
 ];

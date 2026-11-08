@@ -154,3 +154,64 @@ function reaktionsPfeil(signal, klein) {
   const pfeil = `<polygon points="10,40 52,8 52,28 110,28 110,52 52,52 52,72" class="${k}" transform="${signal.richtung > 0 ? 'translate(120 0) scale(-1 1)' : ''}"/>`;
   return S.svg(120, 80, pfeil, klein ? 'rpfeil klein' : 'rpfeil');
 }
+
+const MERK_VORNAMEN = ['Anna', 'Ben', 'Clara', 'David', 'Elif', 'Felix', 'Greta', 'Hannes', 'Ida', 'Jonas', 'Klara', 'Lukas', 'Mia', 'Noah', 'Paul', 'Rosa', 'Samir', 'Tina', 'Vera', 'Yusuf', 'Zoe', 'Erik'];
+const MERK_NACHNAMEN = ['Becker', 'Schulz', 'Wagner', 'Krüger', 'Hofmann', 'Lange', 'Werner', 'Braun', 'Keller', 'Vogel', 'Busch', 'Roth', 'Fuchs', 'Graf', 'Haas', 'Lorenz'];
+const MERK_ALLERGIEN = ['Pollen', 'Nüsse', 'Hausstaub', 'Penicillin', 'Tierhaare', 'Gräser', 'Erdbeeren', 'Keine'];
+const MERK_BLUT = ['A', 'B', 'AB', '0'];
+
+function merkKarten(personen) {
+  return `<div class="ausweise">${personen.map(p => `<div class="ausweis"><div class="ausweis-name">${p.name}</div><dl>
+    <div><dt>Geburtstag</dt><dd>${p.geb}</dd></div>
+    <div><dt>Blutgruppe</dt><dd>${p.blut}</dd></div>
+    <div><dt>Allergie</dt><dd>${p.allergie}</dd></div>
+    <div><dt>Ausweis-Nr.</dt><dd>${p.nr}</dd></div>
+  </dl></div>`).join('')}</div>`;
+}
+
+function merkfaehigkeit(n) {
+  const anzahl = [3, 4, 5, 6, 7][n - 1], sekunden = [40, 60, 80, 100, 120][n - 1], fragen = n <= 2 ? 3 : 4;
+  const vornamen = H.mische(MERK_VORNAMEN), nachnamen = H.mische(MERK_NACHNAMEN);
+  const geburtstage = new Set(), nummern = new Set();
+  const personen = Array.from({ length: anzahl }, (_, i) => {
+    let geb, nr;
+    do { geb = String(H.zufall(1, 28)).padStart(2, '0') + '.' + String(H.zufall(1, 12)).padStart(2, '0') + '.'; } while (geburtstage.has(geb));
+    do { nr = String(H.zufall(10000, 99999)); } while (nummern.has(nr));
+    geburtstage.add(geb);
+    nummern.add(nr);
+    return { name: `${vornamen[i]} ${nachnamen[i]}`, geb, nr, blut: H.wahl(MERK_BLUT), allergie: H.wahl(MERK_ALLERGIEN) };
+  });
+  const quelle = { html: merkKarten(personen), sekunden };
+  const andere = (p, feld) => H.mische(personen.filter(q => q !== p).map(q => q[feld]));
+  const arten = [
+    p => ({ frage: `Welche Blutgruppe hat ${p.name}?`, antworten: MERK_BLUT.slice(), richtig: MERK_BLUT.indexOf(p.blut), reihenfolgeFest: true }),
+    p => {
+      const reserve = Array.from({ length: 6 }, () => String(H.zufall(1, 28)).padStart(2, '0') + '.' + String(H.zufall(1, 12)).padStart(2, '0') + '.');
+      return Object.assign({ frage: `Wann hat ${p.name} Geburtstag?` }, H.optionenText(p.geb, [...new Set(andere(p, 'geb').concat(reserve))].filter(x => x !== p.geb)));
+    },
+    p => {
+      const text = a => (a === 'Keine' ? 'Keine Allergie' : a);
+      return Object.assign({ frage: `Welche Allergie hat ${p.name}?` }, H.optionenText(text(p.allergie), H.mische(MERK_ALLERGIEN.filter(a => a !== p.allergie)).map(text)));
+    },
+    p => Object.assign({ frage: `Wem gehört die Ausweisnummer ${p.nr}?` }, H.optionenText(p.name, andere(p, 'name').concat(H.mische(MERK_VORNAMEN).slice(0, 3).map(v => `${v} ${p.name.split(' ')[1]}`)).filter(x => x !== p.name))),
+    p => {
+      const aehnlich = [p.nr.slice(0, 4) + ((Number(p.nr[4]) + 3) % 10), p.nr[1] + p.nr[0] + p.nr.slice(2), String(H.zufall(10000, 99999))];
+      return Object.assign({ frage: `Welche Ausweisnummer hat ${p.name}?` }, H.optionenText(p.nr, [...new Set(andere(p, 'nr').concat(aehnlich))].filter(x => x !== p.nr)));
+    }
+  ];
+  const paare = [];
+  const kombis = H.mische(personen.flatMap(p => arten.map((_, k) => [p, k])));
+  for (const [p, k] of kombis) {
+    if (paare.length >= fragen) break;
+    if (paare.some(([q, j]) => q === p || j === k) && paare.length < Math.min(personen.length, arten.length)) continue;
+    paare.push([p, k]);
+  }
+  const aufgaben = paare.map(([p, k]) => Object.assign(arten[k](p), {
+    merkenQuelle: quelle,
+    erklaerung: [`${p.name}: Geburtstag ${p.geb}, Blutgruppe ${p.blut}, Allergie ${p.allergie}, Ausweis-Nr. ${p.nr}.`, 'Tipp: Verknüpfe Name und Merkmale zu einem kleinen Bild im Kopf.']
+  }));
+  const erste = aufgaben[0];
+  erste.merken = quelle;
+  erste.weitere = aufgaben.slice(1);
+  return erste;
+}

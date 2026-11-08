@@ -11,7 +11,8 @@ const ZIELE = [
   { id: 'mannschaften', name: 'Mannschaften' },
   { id: 'feldwebel', name: 'Unteroffizier / Feldwebel' },
   { id: 'offizier', name: 'Offizier' },
-  { id: 'ksk', name: 'KSK (Kommando Spezialkräfte)' }
+  { id: 'ksk-feldwebel', name: 'KSK als Feldwebel' },
+  { id: 'ksk-offizier', name: 'KSK als Offizier' }
 ];
 
 const SYMBOLE = {
@@ -131,17 +132,16 @@ function niveauHtml(n) {
 const ANSICHTEN = {};
 const AKTIONEN = {};
 
+const BREITE_ANSICHTEN = ['aufgabe', 'intro', 'pruefung'];
+const NACH_RENDER = [];
+const BEI_RUECKKEHR = [];
+
 function render() {
   clearInterval(uhr);
   uhr = null;
-  $app.classList.toggle('breit', ansicht.name === 'aufgabe' || ansicht.name === 'intro');
+  $app.classList.toggle('breit', BREITE_ANSICHTEN.includes(ansicht.name));
   $app.innerHTML = ANSICHTEN[ansicht.name]();
-  if (ansicht.name === 'aufgabe' && sitzung.aktuell.gewaehlt === null) {
-    uhr = setInterval(() => {
-      const el = document.getElementById('uhr');
-      if (el && sitzung && sitzung.aktuell.gewaehlt === null) el.textContent = zeitText(Date.now() - sitzung.aktuell.start);
-    }, 1000);
-  }
+  NACH_RENDER.forEach(f => f());
 }
 
 function zeige(name, extra) {

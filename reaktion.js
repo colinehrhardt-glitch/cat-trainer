@@ -17,11 +17,11 @@ function reaktionsIntro() {
   </main>`;
 }
 
-function starteReaktion(probe) {
+function starteReaktion(probe, pruefung) {
   const e = daten.einstellungen;
-  const n = e.niveau === 'auto' ? startNiveau() : Number(e.niveau);
+  const n = pruefung ? pruefung.niveau : e.niveau === 'auto' ? startNiveau() : Number(e.niveau);
   if (rk) clearTimeout(rk.timer);
-  rk = { probe, niveau: n, startNiveau: n, auto: !probe && e.niveau === 'auto', anzahl: probe ? 6 : 20, ergebnisse: [], phase: 'bereit', signal: null, t0: 0, timer: null, letzte: null };
+  rk = { probe, niveau: n, startNiveau: n, auto: !!pruefung || (!probe && e.niveau === 'auto'), anzahl: pruefung ? pruefung.anzahl : probe ? 6 : 20, ergebnisse: [], phase: 'bereit', signal: null, t0: 0, timer: null, letzte: null, pruefung: !!pruefung, fertig: pruefung ? pruefung.fertig : null, titel: pruefung ? pruefung.titel : '' };
   zeige('reaktion');
 }
 
@@ -45,13 +45,20 @@ function zeichneReaktion() {
 }
 
 function reaktionsTitel() {
-  return `${rk.probe ? 'Probelauf · ' : ''}Signal ${Math.min(rk.ergebnisse.length + 1, rk.anzahl)} von ${rk.anzahl}`;
+  return `${rk.titel}${rk.probe ? 'Probelauf · ' : ''}Signal ${Math.min(rk.ergebnisse.length + 1, rk.anzahl)} von ${rk.anzahl}`;
 }
 
 function rkNaechstes() {
   clearTimeout(rk.timer);
   if (rk.ergebnisse.length >= rk.anzahl) {
     rk.phase = 'fertig';
+    if (rk.pruefung) {
+      const fertig = rk.fertig;
+      const ergebnisse = rk.ergebnisse;
+      rk = null;
+      fertig(ergebnisse);
+      return;
+    }
     render();
     return;
   }
@@ -92,7 +99,7 @@ function rkErgebnis(e) {
   rk.ergebnisse.push(e);
   rk.letzte = e;
   if (!rk.probe) {
-    daten.verlauf.push({ b: 'konzentration', t: 'reaktion', n: rk.niveau, r: e.r, ms: e.ms, d: Date.now(), m: 'u' });
+    daten.verlauf.push({ b: 'konzentration', t: 'reaktion', n: rk.niveau, r: e.r, ms: e.ms, d: Date.now(), m: rk.pruefung ? 'p' : 'u' });
     speichern();
   }
   if (rk.auto && rk.ergebnisse.length % 5 === 0) {
@@ -153,6 +160,10 @@ Object.assign(AKTIONEN, {
   },
 
   'rk-abbrechen'() {
+    if (rk.pruefung) {
+      AKTIONEN['pr-abbrechen']();
+      return;
+    }
     if (rk.probe || !rk.ergebnisse.length) {
       clearTimeout(rk.timer);
       rk = null;
