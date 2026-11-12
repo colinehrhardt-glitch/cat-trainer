@@ -12,127 +12,177 @@ const TYPEN = {
   grundrechnen: {
     name: 'Grundrechenarten',
     erklaerung: ['Du siehst eine Rechnung und wählst das richtige Ergebnis.', 'Es gilt: Klammern zuerst, dann Punkt vor Strich.'],
-    erzeuge: n => H.wahl(GRUNDRECHNEN[n])()
+    erzeuge: n => H.wahl(GRUNDRECHNEN[n])(),
+    vorgehen: ['Erst Klammern rechnen, dann Mal und Geteilt, zum Schluss Plus und Minus.', 'Schätze das Ergebnis grob vorher. So erkennst du Antworten, die viel zu groß oder zu klein sind.', 'Achte bei Kommazahlen darauf, wo das Komma steht.'],
+    fehler: 'Hier ist beim Rechnen ein Fehler passiert. Rechne Schritt für Schritt nach dem Lösungsweg.'
   },
   prozent: {
     name: 'Prozentrechnung',
     erklaerung: ['Du berechnest Prozentwerte, Grundwerte und Prozentsätze.', 'Merke: 1 % ist der hundertste Teil vom Ganzen.'],
-    erzeuge: n => H.wahl(PROZENT[n])()
+    erzeuge: n => H.wahl(PROZENT[n])(),
+    vorgehen: ['Schreib auf, was gegeben ist: Grundwert (das Ganze), Prozentsatz oder Prozentwert (der Teil).', 'Rechne zuerst 1 % aus. Dann multiplizierst du mit dem gesuchten Prozentsatz.', 'Bei Rabatt ziehst du ab, bei Aufschlag rechnest du dazu.'],
+    fehler: 'Hier wurde mit dem falschen Wert gerechnet. Prüfe, was der Grundwert ist.'
   },
   dreisatz: {
     name: 'Dreisatz',
     erklaerung: ['Du schließt von einer bekannten Menge auf eine andere.', 'Rechne zuerst auf 1 herunter und dann auf die gesuchte Menge hoch.'],
-    erzeuge: n => H.wahl(DREISATZ[n])()
+    erzeuge: n => H.wahl(DREISATZ[n])(),
+    vorgehen: ['Frag dich zuerst: Mehr von A gibt mehr von B? Dann rechnest du normal.', 'Mehr von A gibt weniger von B, zum Beispiel mehr Arbeiter und weniger Zeit? Dann ist es umgekehrt.', 'Rechne auf 1 herunter und dann auf die gesuchte Menge hoch.'],
+    fehler: 'Hier wurde in die falsche Richtung gerechnet. Prüfe, ob es ein normaler oder ein umgekehrter Dreisatz ist.'
   },
   textaufgaben: {
     name: 'Textaufgaben',
     erklaerung: ['Eine kurze Situation aus dem Alltag wird beschrieben.', 'Lies genau, schreib dir die Zahlen heraus und rechne Schritt für Schritt.'],
-    erzeuge: n => H.wahl(TEXTAUFGABEN.filter(t => n >= t.von && n <= t.bis)).f(n)
+    erzeuge: n => H.wahl(TEXTAUFGABEN.filter(t => n >= t.von && n <= t.bis)).f(n),
+    vorgehen: ['Lies die Frage am Ende zuerst. Dann weißt du, was gesucht ist.', 'Schreib dir alle Zahlen mit Einheiten heraus.', 'Rechne in kleinen Schritten und prüfe, ob das Ergebnis Sinn ergibt.'],
+    fehler: 'Hier wurde ein Schritt vergessen oder eine Zahl falsch verwendet. Geh den Lösungsweg Schritt für Schritt durch.'
   },
   rechenzeichen: {
     name: 'Rechenzeichen einsetzen',
     erklaerung: ['In der Rechnung fehlen Rechenzeichen.', 'Wähle die Zeichen, mit denen das Ergebnis stimmt. Es gilt Punkt vor Strich.'],
-    erzeuge: n => rechenzeichen(n)
+    erzeuge: n => rechenzeichen(n),
+    vorgehen: ['Setz jede Antwort in die Rechnung ein und rechne sie aus.', 'Denk an Punkt vor Strich, auch wenn die Zeichen nebeneinander stehen.', 'Schau aufs Ergebnis: Ist es viel größer als die Zahlen, steckt meist ein Mal drin.'],
+    fehler: 'Mit diesen Zeichen kommt ein anderes Ergebnis heraus.'
   },
   zahlenreihen: {
     name: 'Zahlenreihen',
     erklaerung: ['Die Zahlen folgen einer festen Regel.', 'Finde die Regel und wähle die Zahl, die als Nächstes kommt.'],
-    erzeuge: n => zahlenreihe(n)
+    erzeuge: n => zahlenreihe(n),
+    vorgehen: ['Schreib die Abstände zwischen den Zahlen auf.', 'Ändern sich die Abstände, schau dir die Abstände der Abstände an oder prüfe Mal und Geteilt.', 'Passt nichts, prüfe jede zweite Zahl. Oft sind zwei Reihen ineinander verschachtelt.'],
+    fehler: 'Diese Zahl folgt nicht der Regel der Reihe.'
   },
   schlussfolgerungen: {
     name: 'Schlussfolgerungen',
     erklaerung: ['Zwei Aussagen sind vorgegeben. Sie gelten, auch wenn sie seltsam klingen.', 'Wähle die Schlussfolgerung, die immer gilt. Wenn keine sicher folgt, wähle „Keine der Schlussfolgerungen ist richtig“.', '„Einige“ heißt: mindestens einer, vielleicht auch alle.'],
-    erzeuge: n => schlussfolgerung(n)
+    erzeuge: n => schlussfolgerung(n),
+    vorgehen: ['Nimm die beiden Aussagen wörtlich, auch wenn sie seltsam klingen.', 'Zeichne dir zwei oder drei Kreise auf und probiere verschiedene Möglichkeiten.', 'Eine Antwort ist nur richtig, wenn sie in jeder Möglichkeit gilt. Findest du ein Gegenbeispiel, ist sie falsch.'],
+    fehler: 'Diese Schlussfolgerung muss nicht immer gelten. Es gibt eine Möglichkeit, in der sie falsch ist.'
   },
   wortfluessigkeit: {
     name: 'Wortflüssigkeit',
     erklaerung: ['Die Buchstaben eines Wortes sind durcheinander.', 'Finde das Wort und wähle seinen Anfangsbuchstaben. Steht er nicht dabei, wähle „Keine der Antworten ist richtig“.'],
-    erzeuge: n => wortfluessigkeit(n)
+    erzeuge: n => wortfluessigkeit(n),
+    vorgehen: ['Such nach typischen Silben wie -ung, -er, -en, sch oder ch.', 'Probiere häufige Anfangsbuchstaben wie S, B, K, M oder T.', 'Bleib nicht zu lange hängen. Im Test zählt jede Aufgabe gleich.'],
+    fehler: 'Dieser Buchstabe ist nicht der Anfang des gesuchten Wortes.'
   },
   figurenzusammensetzen: {
     name: 'Figuren zusammensetzen',
     erklaerung: ['Du siehst mehrere Einzelteile.', 'Wähle die Figur, die sich aus allen Teilen lückenlos legen lässt. Die Teile dürfen gedreht, aber nicht gespiegelt werden.'],
-    erzeuge: n => figurenZusammensetzen(n)
+    erzeuge: n => figurenZusammensetzen(n),
+    vorgehen: ['Zähle zuerst die Kästchen aller Teile zusammen. Die Figur muss genau so viele haben.', 'Leg das größte Teil zuerst in Gedanken in die Figur.', 'Die Teile dürfen gedreht, aber nicht gespiegelt werden.'],
+    fehler: 'Diese Figur lässt sich mit den Teilen nicht lückenlos legen.'
   },
   merkfaehigkeit: {
     name: 'Merkfähigkeit',
     erklaerung: ['Du siehst einige Ausweise mit Name, Geburtstag, Blutgruppe, Allergie und Nummer.', 'Präge sie dir ein. Danach werden sie ausgeblendet und du beantwortest Fragen dazu.'],
-    erzeuge: n => merkfaehigkeit(n)
+    erzeuge: n => merkfaehigkeit(n),
+    vorgehen: ['Merk dir zu jeder Person ein Bild oder eine kleine Geschichte.', 'Verbinde die Werte miteinander, zum Beispiel Blutgruppe und Allergie.', 'Wiederhole die Angaben im Kopf, solange die Ausweise zu sehen sind.'],
+    fehler: 'Diese Angabe gehört zu einer anderen Person oder kommt gar nicht vor.'
   },
   rechtschreibung: {
     name: 'Rechtschreibung',
     frage: 'Welches Wort ist richtig geschrieben?',
-    erklaerung: ['Du siehst vier Schreibweisen. Nur eine ist richtig.', 'Achte auf doppelte Buchstaben, Dehnungs-h, ie und Fremdwörter. Auf höheren Niveaus geht es um ganze Sätze.']
+    erklaerung: ['Du siehst vier Schreibweisen. Nur eine ist richtig.', 'Achte auf doppelte Buchstaben, Dehnungs-h, ie und Fremdwörter. Auf höheren Niveaus geht es um ganze Sätze.'],
+    vorgehen: ['Sprich das Wort langsam in Gedanken.', 'Denk an verwandte Wörter. Fahrrad kommt von fahren, deshalb mit h.', 'Achte auf doppelte Buchstaben, ie, Dehnungs-h und Fremdwörter.'],
+    fehler: 'Diese Schreibweise ist falsch. Vergleiche sie Buchstabe für Buchstabe mit der richtigen.'
   },
   analogien: {
     name: 'Wortanalogien',
     frage: 'Welches Wort passt an die Stelle des Fragezeichens?',
-    erklaerung: ['Die ersten beiden Wörter stehen in einer bestimmten Beziehung.', 'Finde das Wort, das zum dritten Wort in derselben Beziehung steht.']
+    erklaerung: ['Die ersten beiden Wörter stehen in einer bestimmten Beziehung.', 'Finde das Wort, das zum dritten Wort in derselben Beziehung steht.'],
+    vorgehen: ['Bilde einen Satz mit den ersten beiden Wörtern, zum Beispiel: Ein Hund bellt.', 'Setz das dritte Wort in denselben Satz ein.', 'Prüfe jede Antwort mit diesem Satz.'],
+    fehler: 'Dieses Wort steht nicht in derselben Beziehung wie die ersten beiden Wörter.'
   },
   wortbedeutung: {
     name: 'Synonyme und Oberbegriffe',
-    erklaerung: ['Du findest Wörter mit gleicher Bedeutung, den passenden Oberbegriff oder das Wort, das nicht dazugehört.']
+    erklaerung: ['Du findest Wörter mit gleicher Bedeutung, den passenden Oberbegriff oder das Wort, das nicht dazugehört.'],
+    vorgehen: ['Lies die Frage genau: Gleiche Bedeutung, Oberbegriff oder was nicht passt?', 'Bilde mit dem Wort einen Satz und tausche es gegen die Antworten aus.', 'Ein Oberbegriff passt auf alle genannten Wörter.'],
+    fehler: 'Dieses Wort hat eine andere Bedeutung.'
   },
   englisch: {
     name: 'Englisch',
     frage: 'Welches Wort passt in die Lücke?',
-    erklaerung: ['Ein englischer Satz hat eine Lücke.', 'Wähle die Antwort, die grammatisch und inhaltlich passt.']
+    erklaerung: ['Ein englischer Satz hat eine Lücke.', 'Wähle die Antwort, die grammatisch und inhaltlich passt.'],
+    vorgehen: ['Achte auf Signalwörter wie yesterday, already oder every day.', 'Prüfe, wer etwas tut: he, she und it bekommen im Present ein s.', 'Lies den Satz mit jeder Antwort einmal im Kopf.'],
+    fehler: 'Diese Form passt grammatisch nicht in den Satz.'
   },
   figurenreihen: {
     name: 'Figurenreihen',
     erklaerung: ['Die Figuren verändern sich nach festen Regeln.', 'Achte auf Drehung, Position, Anzahl, Form und Füllung. Oft ändern sich mehrere Dinge gleichzeitig.'],
-    erzeuge: n => figurenreihe(n)
+    erzeuge: n => figurenreihe(n),
+    vorgehen: ['Vergleiche immer zwei Figuren nebeneinander.', 'Prüfe nacheinander: Drehung, Position, Anzahl, Form und Füllung.', 'Führe jede Regel einen Schritt weiter und prüfe alle Antworten.'],
+    fehler: 'Bei dieser Figur passt mindestens eine Regel nicht.'
   },
   matrizen: {
     name: 'Matrizen',
     erklaerung: ['In einem Feld aus 3 × 3 Figuren fehlt die letzte.', 'Finde die Regeln in den Zeilen und Spalten und wähle die passende Figur.'],
-    erzeuge: n => matrix(n)
+    erzeuge: n => matrix(n),
+    vorgehen: ['Schau dir zuerst die Zeilen an, dann die Spalten.', 'Prüfe, ob in jeder Zeile jede Form oder Farbe einmal vorkommt.', 'Achte auf Anzahl, Drehung und Füllung.'],
+    fehler: 'Diese Figur passt nicht zu den Regeln in Zeile und Spalte.'
   },
   wuerfel: {
     name: 'Würfel',
     erklaerung: ['Du siehst die Faltvorlage eines Würfels.', 'Wähle den Würfel, der sich daraus falten lässt. Gegenüberliegende Seiten sind nie gleichzeitig zu sehen.'],
-    erzeuge: n => wuerfelAufgabe(n)
+    erzeuge: n => wuerfelAufgabe(n),
+    vorgehen: ['Such in der Vorlage die gegenüberliegenden Seiten. Sie sind nie gleichzeitig zu sehen.', 'Wähle eine Fläche, die du sicher erkennst, und schau, was daneben liegen muss.', 'Prüfe, in welche Richtung die Zeichen zeigen.'],
+    fehler: 'Dieser Würfel lässt sich aus der Vorlage nicht falten.'
   },
   faltvorlagen: {
     name: 'Faltvorlagen',
     erklaerung: ['Du prüfst Faltvorlagen für Würfel.', 'Stell dir vor, wie die Flächen beim Falten hochklappen.'],
-    erzeuge: n => faltvorlage(n)
+    erzeuge: n => faltvorlage(n),
+    vorgehen: ['Eine Würfelvorlage hat 6 Flächen.', 'Vier Flächen in einem 2 × 2 Block gehen nie.', 'Klapp in Gedanken eine Fläche nach der anderen hoch und prüfe, ob sich zwei überlappen.'],
+    fehler: 'Diese Vorlage passt nicht. Beim Falten überlappen sich Flächen oder eine Seite bleibt offen.'
   },
   drehfiguren: {
     name: 'Gedrehte Figuren',
     erklaerung: ['Die Vorlage wurde gedreht. Drei Figuren sind zusätzlich gespiegelt.', 'Finde die Figur, die nur gedreht ist.'],
-    erzeuge: n => drehfigur(n)
+    erzeuge: n => drehfigur(n),
+    vorgehen: ['Such dir einen auffälligen Teil der Vorlage, zum Beispiel eine Ecke.', 'Dreh die Antwort in Gedanken zurück, bis dieser Teil wieder gleich liegt.', 'Liegt dann alles andere auf der falschen Seite, ist die Figur gespiegelt.'],
+    fehler: 'Diese Figur ist gespiegelt. Durch Drehen allein entsteht sie nicht.'
   },
   zahnraeder: {
     name: 'Zahnräder',
     erklaerung: ['Zahnräder, die ineinandergreifen, drehen sich gegeneinander.', 'Rechts herum heißt im Uhrzeigersinn. Manche Aufgaben fragen nach der Geschwindigkeit.'],
-    erzeuge: n => zahnraeder(n)
+    erzeuge: n => zahnraeder(n),
+    vorgehen: ['Zwei Räder, die sich berühren, drehen sich gegeneinander.', 'Gehe von Rad zu Rad und schreib die Richtung dazu.', 'Ein kleines Rad dreht sich schneller als ein großes.'],
+    fehler: 'Hier wurde die Richtung oder das Tempo falsch weitergegeben.'
   },
   hebel: {
     name: 'Hebel',
     erklaerung: ['Eine Wippe ist im Gleichgewicht, wenn auf beiden Seiten Gewicht × Abstand gleich ist.', 'Die Zahlen unter der Wippe geben den Abstand zum Drehpunkt an.'],
-    erzeuge: n => hebel(n)
+    erzeuge: n => hebel(n),
+    vorgehen: ['Rechne für jede Seite Gewicht × Abstand.', 'Die Seite mit dem größeren Wert geht nach unten.', 'Fehlt ein Gewicht, teile den Wert der anderen Seite durch den Abstand.'],
+    fehler: 'Hier wurde nur das Gewicht oder nur der Abstand beachtet. Es zählt beides zusammen.'
   },
   flaschenzuege: {
     name: 'Flaschenzüge',
     erklaerung: ['Bei einem Flaschenzug verteilt sich die Last auf mehrere Seilstücke.', 'Zähle die Seilstücke, an denen die Last hängt.'],
-    erzeuge: n => flaschenzuege(n)
+    erzeuge: n => flaschenzuege(n),
+    vorgehen: ['Zähle die Seilstücke, an denen die bewegliche Rolle hängt.', 'Teile die Last durch diese Anzahl.', 'Eine feste Rolle lenkt nur um. Sie spart keine Kraft.'],
+    fehler: 'Hier wurden die tragenden Seilstücke falsch gezählt.'
   },
   physik: {
     name: 'Einfache Physik',
     erklaerung: ['Fragen zu Strom, Kräften, Druck und Physik im Alltag.'],
     festAnteil: 0.5,
-    erzeuge: n => physik(n)
+    erzeuge: n => physik(n),
+    vorgehen: ['Überleg zuerst, welche Formel passt, zum Beispiel Leistung = Spannung × Stromstärke.', 'Achte auf die Einheiten und rechne sie, wenn nötig, um.', 'Prüfe, ob das Ergebnis im Alltag Sinn ergibt.'],
+    fehler: 'Hier wurde die falsche Formel oder Einheit benutzt.'
   },
   zeichenzaehlen: {
     name: 'Zeichen zählen',
     erklaerung: ['Zähle die gesuchten Zeichen im Feld.', 'Arbeite schnell, aber genau. Ähnliche Zeichen sollen dich ablenken.'],
-    erzeuge: n => zeichenzaehlen(n)
+    erzeuge: n => zeichenzaehlen(n),
+    vorgehen: ['Geh das Feld Zeile für Zeile durch.', 'Fahre mit dem Finger mit, damit du keine Zeile überspringst.', 'Achte auf Zeichen, die dem gesuchten nur ähnlich sehen.'],
+    fehler: 'Hier hast du dich verzählt.'
   },
   symbolvergleich: {
     name: 'Symbole vergleichen',
     erklaerung: ['Links und rechts stehen Zeichenfolgen.', 'Zähle, wie viele Zeilen auf beiden Seiten genau gleich sind.'],
-    erzeuge: n => symbolvergleich(n)
+    erzeuge: n => symbolvergleich(n),
+    vorgehen: ['Vergleiche jede Zeile Zeichen für Zeichen.', 'Achte auf ähnliche Zeichen wie O und 0 oder b und d.', 'Zähle nur die Zeilen, die ganz genau gleich sind.'],
+    fehler: 'Hier hast du dich verzählt. Mindestens eine Zeile wurde falsch eingeordnet.'
   },
   reaktion: {
     name: 'Reaktionstest',
@@ -141,11 +191,15 @@ const TYPEN = {
   },
   allgemeinwissen: {
     name: 'Allgemeinbildung',
-    erklaerung: ['Fragen zu Politik, Geschichte, Erdkunde und Naturwissenschaft.']
+    erklaerung: ['Fragen zu Politik, Geschichte, Erdkunde und Naturwissenschaft.'],
+    vorgehen: ['Schließ zuerst Antworten aus, die sicher falsch sind.', 'Rate lieber, als keine Antwort zu geben.'],
+    fehler: 'Diese Antwort ist sachlich falsch.'
   },
   bundeswehr: {
     name: 'Grundwissen Bundeswehr',
-    erklaerung: ['Fragen zu Aufbau, Dienstgraden und Auftrag der Bundeswehr.']
+    erklaerung: ['Fragen zu Aufbau, Dienstgraden und Auftrag der Bundeswehr.'],
+    vorgehen: ['Schließ zuerst Antworten aus, die sicher falsch sind.', 'Lern die Dienstgrade in der richtigen Reihenfolge.'],
+    fehler: 'Diese Antwort ist sachlich falsch.'
   }
 };
 

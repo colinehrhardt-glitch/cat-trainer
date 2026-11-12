@@ -19,6 +19,10 @@ function d2Zeichen(z, x, y, markiert) {
   return t + striche(z.o, y - 22, y - 15) + striche(z.u, y + 15, y + 22);
 }
 
+function zaehlGrund(x, k) {
+  return `Du hast dich um ${Math.abs(x - k)} verzählt und wahrscheinlich ${x > k ? 'ähnliche Zeichen mitgezählt' : 'welche übersehen'}.`;
+}
+
 function zeichenzaehlen(n) {
   if (n <= 2) {
     const [ziel, alle, zeilen, spalten] = n === 1
@@ -37,7 +41,7 @@ function zeichenzaehlen(n) {
     return {
       frage: `Wie oft kommt das Zeichen „${ziel}“ vor?`,
       bild: bild(false),
-      ...H.optionen(r.k, [r.k + 1, r.k - 1, r.k + 2, r.k - 2, r.k + 3]),
+      ...H.optionen(r.k, [r.k + 1, r.k - 1, r.k + 2, r.k - 2, r.k + 3].map(x => [x, zaehlGrund(x, r.k)])),
       erklaerung: [`Das Zeichen „${ziel}“ kommt ${r.k}-mal vor.`, 'Tipp: Zeile für Zeile von links nach rechts zählen.'],
       loesungsbild: bild(true)
     };
@@ -67,7 +71,7 @@ function zeichenzaehlen(n) {
   return {
     frage: 'Wie oft kommt ein „d“ mit genau zwei Strichen vor? Die Striche können oben, unten oder verteilt sein.',
     bild: bild(false),
-    ...H.optionen(r.k, [r.k + 1, r.k - 1, r.k + 2, r.k - 2, r.k + 3]),
+    ...H.optionen(r.k, [r.k + 1, r.k - 1, r.k + 2, r.k - 2, r.k + 3].map(x => [x, zaehlGrund(x, r.k)])),
     erklaerung: [`Gesucht sind nur „d“ mit genau zwei Strichen. Es sind ${r.k}.`, 'Achte auf „p“ mit zwei Strichen und auf „d“ mit drei Strichen. Die zählen nicht.'],
     loesungsbild: bild(true)
   };
@@ -127,7 +131,7 @@ function symbolvergleich(n) {
   return {
     frage: 'Wie viele Zeilen sind links und rechts genau gleich?',
     bild: bild(false),
-    ...H.optionen(gleich, [gleich + 1, gleich - 1, gleich + 2, gleich - 2].filter(x => x >= 0 && x <= zeilen), null, { schritt: 1 }),
+    ...H.optionen(gleich, [gleich + 1, gleich - 1, gleich + 2, gleich - 2].filter(x => x >= 0 && x <= zeilen), null, { schritt: 1, auto: x => `Du hast dich um ${Math.abs(x - gleich)} verzählt. Wahrscheinlich hast du ${x > gleich ? 'einen kleinen Unterschied übersehen' : 'eine gleiche Zeile für verschieden gehalten'}.` }),
     erklaerung: [gleicheNr.length ? `Genau gleich ${gleicheNr.length === 1 ? 'ist Zeile' : 'sind die Zeilen'} ${H.und(gleicheNr.map(String))}.` : 'Keine Zeile ist genau gleich.', 'Vergleiche Zeichen für Zeichen. Achte auf ähnliche Zeichen wie 0 und O oder 8 und B.'],
     loesungsbild: bild(true)
   };
@@ -206,10 +210,26 @@ function merkfaehigkeit(n) {
     if (paare.some(([q, j]) => q === p || j === k) && paare.length < Math.min(personen.length, arten.length)) continue;
     paare.push([p, k]);
   }
+  const merkGruende = (a, p, k) => {
+    const feld = ['blut', 'geb', 'allergie', 'name', 'nr'][k];
+    const gruende = {};
+    a.antworten.forEach((t, i) => {
+      if (i === a.richtig) return;
+      if (feld === 'name') {
+        const q = personen.find(x => x.name === t);
+        gruende[t] = q ? `${t} hat die Ausweisnummer ${q.nr}.` : `${t} steht auf keinem der Ausweise.`;
+        return;
+      }
+      const wert = feld === 'allergie' && t === 'Keine Allergie' ? 'Keine' : t;
+      const besitzer = personen.filter(q => q !== p && q[feld] === wert).map(q => q.name);
+      gruende[t] = besitzer.length ? `Das gehört zu ${H.und(besitzer)}.` : 'Das steht auf keinem der Ausweise.';
+    });
+    return gruende;
+  };
   const aufgaben = paare.map(([p, k]) => Object.assign(arten[k](p), {
     merkenQuelle: quelle,
     erklaerung: [`${p.name}: Geburtstag ${p.geb}, Blutgruppe ${p.blut}, Allergie ${p.allergie}, Ausweis-Nr. ${p.nr}.`, 'Tipp: Verknüpfe Name und Merkmale zu einem kleinen Bild im Kopf.']
-  }));
+  })).map((a, i) => Object.assign(a, { gruende: merkGruende(a, paare[i][0], paare[i][1]) }));
   const erste = aufgaben[0];
   erste.merken = quelle;
   erste.weitere = aufgaben.slice(1);

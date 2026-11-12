@@ -1,4 +1,4 @@
-const VERSION = 'cat-trainer-5';
+const VERSION = 'cat-trainer-6';
 const DATEIEN = [
   './',
   'index.html',

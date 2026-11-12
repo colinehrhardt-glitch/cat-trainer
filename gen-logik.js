@@ -57,6 +57,18 @@ function slErklaerung(praemissen, schluss, namen) {
   ];
 }
 
+function slGrund(praemissen, s, namen) {
+  const moeglich = SL_MODELLE.belegt.some(m => praemissen.every(p => slGilt(p, m)) && slGilt(s, m));
+  if (!moeglich) return 'Diese Aussage stimmt nie. Sie widerspricht den beiden Aussagen oben.';
+  const x = namen[0], y = namen[2];
+  return 'Diese Aussage kann stimmen, muss aber nicht. ' + {
+    A: `Die Aussagen legen nicht fest, dass wirklich alle ${x} auch ${y} sind.`,
+    E: `Die Aussagen schließen nicht aus, dass einige ${x} doch ${y} sind.`,
+    I: `Es könnte auch sein, dass gar keine ${x} ${y} sind.`,
+    O: `Es könnte auch sein, dass alle ${x} ${y} sind.`
+  }[s.f];
+}
+
 function schlussfolgerung(n) {
   const begriffe = n <= 2 ? SL_ALLTAG : n === 3 ? H.wahl([SL_ALLTAG, SL_FANTASIE]) : SL_FANTASIE;
   const willKeine = Math.random() < [0.2, 0.25, 0.25, 0.3, 0.35][n - 1];
@@ -73,11 +85,15 @@ function schlussfolgerung(n) {
     const keine = gueltig.length === 0;
     if (keine !== willKeine) continue;
     const reihenfolge = n >= 4 && Math.random() < 0.5 ? [p2, p1] : [p1, p2];
+    const gruende = {};
+    schluesse.forEach((s, i) => { if (!gueltig.includes(i)) gruende[slSatz(s, namen)] = slGrund(praemissen, s, namen); });
+    if (!keine) gruende[SL_KEINE] = `Eine Schlussfolgerung gilt sicher: ${slSatz(schluesse[gueltig[0]], namen)}`;
     return {
       frage: 'Welche Schlussfolgerung muss immer gelten?',
       text: reihenfolge.map(p => slSatz(p, namen)).join('\n'),
       antworten: schluesse.map(s => slSatz(s, namen)).concat([SL_KEINE]),
       richtig: keine ? 4 : gueltig[0],
+      gruende,
       reihenfolgeFest: true,
       erklaerung: slErklaerung(reihenfolge, keine ? null : schluesse[gueltig[0]], namen)
     };

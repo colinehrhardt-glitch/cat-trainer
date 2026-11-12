@@ -1431,6 +1431,116 @@ svg {
   font-weight: 700;
 }
 
+.vergleich {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.vergleich-zeile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--linie);
+  min-width: 0;
+}
+
+.vergleich-zeile.falsch {
+  border-color: var(--schlecht);
+  background: var(--schlecht-zart);
+}
+
+.vergleich-zeile.richtig {
+  border-color: var(--gut);
+  background: var(--gut-zart);
+}
+
+.vergleich-kopf {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vergleich-kopf .buchstabe {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.85rem;
+}
+
+.vergleich-kopf .label {
+  flex: 1;
+}
+
+.vergleich-zeichen {
+  font-weight: 700;
+}
+
+.falsch .vergleich-zeichen {
+  color: var(--schlecht);
+}
+
+.richtig .vergleich-zeichen {
+  color: var(--gut);
+}
+
+.vergleich-text {
+  font-size: 1.15rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.vergleich-bild {
+  display: block;
+  max-width: 6.5rem;
+}
+
+.warum {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.8rem 0.9rem;
+  border-left: 3px solid var(--warn);
+  background: var(--warn-zart);
+  border-radius: 0 10px 10px 0;
+}
+
+.warum p {
+  font-weight: 500;
+}
+
+.vorgehen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 10px;
+  background: var(--flaeche-2);
+}
+
+.vorgehen ol {
+  margin: 0;
+  padding-left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mehr > summary {
+  cursor: pointer;
+  color: var(--akzent);
+  font-weight: 600;
+  padding: 0.3rem 0;
+}
+
+.mehr-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.5rem;
+}
+
 .aufgabe-layout,
 .aufgabe-links,
 .aufgabe-rechts {

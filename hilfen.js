@@ -87,28 +87,55 @@ const H = {
     const schritt = regeln.schritt || Math.max(1, Math.round(Math.abs(korrekt) / 10));
     const richtigText = fmt(korrekt);
     const texte = [richtigText];
-    const dazu = x => {
+    const gruende = {};
+    const werte = {};
+    const dazu = (x, grund) => {
       if (texte.length >= 4 || !Number.isFinite(x)) return;
       if (ganz && !Number.isInteger(H.runde(x, 6))) return;
       if (positiv && x < 0) return;
       const t = fmt(x);
-      if (!texte.includes(t)) texte.push(t);
+      if (texte.includes(t)) return;
+      texte.push(t);
+      werte[t] = x;
+      if (grund) gruende[t] = grund;
     };
-    H.mische(kandidaten).forEach(dazu);
+    H.mische(kandidaten).forEach(k => (Array.isArray(k) ? dazu(k[0], k[1]) : dazu(k)));
     for (let v = 0; texte.length < 4 && v < 80; v++) {
       dazu(korrekt + H.wahl([-1, 1]) * H.zufall(1, 4) * schritt);
     }
+    const auto = typeof regeln.auto === 'function' ? regeln.auto : regeln.auto === false ? null : x => H.abweichung(x, korrekt, format, regeln);
+    if (auto) texte.slice(1).forEach(t => { if (!gruende[t]) gruende[t] = auto(werte[t]); });
     const o = H.mische(texte);
-    return { antworten: o, richtig: o.indexOf(richtigText) };
+    return { antworten: o, richtig: o.indexOf(richtigText), gruende };
+  },
+
+  abweichung(x, korrekt, format, regeln = {}) {
+    const d = H.runde(x - korrekt, 6), weg = Math.abs(d), richtung = d > 0 ? 'zu groß' : 'zu klein';
+    if (korrekt !== 0 && x !== 0) {
+      const q = H.runde(x / korrekt, 6);
+      if (q === 10 || q === 100 || q === 0.1 || q === 0.01) return 'Das Komma ist verrutscht. Zähle die Stellen nach dem Komma genau.';
+      if (q === -1) return 'Das Vorzeichen ist falsch. Prüfe, ob das Ergebnis positiv oder negativ ist.';
+      if (q === 2) return 'Dieses Ergebnis ist doppelt so groß wie richtig. Rechne die Schritte im Lösungsweg nach.';
+      if (q === 0.5) return 'Dieses Ergebnis ist nur halb so groß wie richtig. Rechne die Schritte im Lösungsweg nach.';
+    }
+    const mitBetrag = format !== H.uhr && !regeln.ohneBetrag;
+    if (!mitBetrag) return `Dieses Ergebnis ist ${richtung}. Rechne die Schritte im Lösungsweg nach.`;
+    const betrag = format ? format(weg) : fz(weg);
+    const stelle = { 1: 'Einer', 10: 'Zehner', 100: 'Hunderter', 1000: 'Tausender', 0.1: 'Zehntel', 0.01: 'Hundertstel' }[weg];
+    return `Das Ergebnis ist um ${betrag} ${richtung}.` + (stelle && regeln.stellen ? ` Prüfe die ${stelle} und den Übertrag.` : ' Rechne die Schritte im Lösungsweg nach.');
   },
 
   optionenText(korrekt, falsche) {
     const texte = [korrekt];
-    H.mische(falsche).forEach(t => {
-      if (texte.length < 4 && !texte.includes(t)) texte.push(t);
+    const gruende = {};
+    H.mische(falsche).forEach(f => {
+      const [t, grund] = Array.isArray(f) ? f : [f];
+      if (texte.length >= 4 || texte.includes(t)) return;
+      texte.push(t);
+      if (grund) gruende[t] = grund;
     });
     const o = H.mische(texte);
-    return { antworten: o, richtig: o.indexOf(korrekt) };
+    return { antworten: o, richtig: o.indexOf(korrekt), gruende };
   },
 
   rechne(a, op, b) {

@@ -20,7 +20,13 @@ const S = {
   },
 
   optionen(richtigSvg, falscheSvgs) {
-    const o = H.mische([richtigSvg].concat(falscheSvgs.slice(0, 3)));
-    return { antworten: o, richtig: o.indexOf(richtigSvg), svg: true };
+    const gruende = {};
+    const falsche = falscheSvgs.slice(0, 3).map(f => {
+      if (!Array.isArray(f)) return f;
+      if (f[1]) gruende[f[0]] = f[1];
+      return f[0];
+    });
+    const o = H.mische([richtigSvg].concat(falsche));
+    return { antworten: o, richtig: o.indexOf(richtigSvg), svg: true, gruende };
   }
 };

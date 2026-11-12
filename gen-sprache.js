@@ -12,11 +12,15 @@ function wortfluessigkeit(n) {
   const reserve = H.mische('ABDEFGHKLMNRSTU'.split('').filter(b => b !== erster && !andere.includes(b)));
   const auswahl = andere.concat(reserve).slice(0, keine ? 4 : 3);
   const optionen = (keine ? auswahl : auswahl.concat([erster])).sort((a, b) => a.localeCompare(b, 'de'));
+  const gruende = {};
+  auswahl.forEach(b => { gruende[b] = buchstaben.includes(b) ? `Das Wort heißt ${wort}. ${b} kommt darin vor, steht aber nicht am Anfang.` : `${b} kommt im Wort ${wort} gar nicht vor.`; });
+  if (!keine) gruende[WF_KEINE] = `Der Anfangsbuchstabe ${erster} steht bei den Antworten. Das Wort heißt ${wort}.`;
   return {
     frage: 'Die Buchstaben ergeben ein Wort. Mit welchem Buchstaben beginnt es?',
     term: salat.join(' '),
     antworten: optionen.concat([WF_KEINE]),
     richtig: keine ? 4 : optionen.indexOf(erster),
+    gruende,
     reihenfolgeFest: true,
     erklaerung: [`Das gesuchte Wort heißt ${wort}.`, keine ? `Es beginnt mit ${erster}. Dieser Buchstabe steht nicht bei den Antworten.` : `Es beginnt mit ${erster}.`, 'Tipp: Suche zuerst nach typischen Silben wie SCH, -ER oder -EN.']
   };

@@ -190,6 +190,17 @@ function gegenueberPaare(wuerfel) {
   return paare;
 }
 
+function wuerfelGrund(s, ansichten, gegenueber) {
+  const name = x => WSYMBOLE[x.sym].name;
+  for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) {
+    if (gegenueber(s[i].sym) === s[j].sym) return `Hier sind ${name(s[i])} und ${name(s[j])} gleichzeitig zu sehen. Sie liegen aber gegenüber.`;
+  }
+  const gleich = ansichten.find(v => v.every((x, i) => x.sym === s[i].sym));
+  if (!gleich) return 'Diese drei Zeichen liegen nebeneinander, aber in falscher Reihenfolge. So wäre der Würfel gespiegelt.';
+  const i = [0, 1, 2].find(k => sichtSchluessel([gleich[k]]) !== sichtSchluessel([s[k]]));
+  return i === undefined ? '' : `Das Zeichen ${name(s[i])} zeigt in die falsche Richtung.`;
+}
+
 function wuerfelAufgabe(n) {
   for (;;) {
     const zellen = n <= 3 ? kreuzNetz() : zufallsNetz();
@@ -235,7 +246,7 @@ function wuerfelAufgabe(n) {
     return {
       frage: 'Welcher Würfel lässt sich aus dieser Faltvorlage falten?',
       bild: `<div class="bild-mitte">${netzSvg(zellen, belegung)}</div>`,
-      ...S.optionen(wuerfelSvg(richtig), falsche.map(wuerfelSvg)),
+      ...S.optionen(wuerfelSvg(richtig), falsche.map(s => [wuerfelSvg(s), wuerfelGrund(s, DREHUNGEN.map(m => sichtAuf(wuerfel, m)), gegenueber)])),
       erklaerung: weg
     };
   }
@@ -254,7 +265,7 @@ function faltvorlage(n) {
       return {
         frage: 'Welches Zeichen liegt nach dem Falten gegenüber der blauen Fläche?',
         bild: `<div class="bild-mitte">${netzSvg(zellen, belegung, markiert)}</div>`,
-        ...S.optionen(symbolSvg(gegen), andere.map(symbolSvg)),
+        ...S.optionen(symbolSvg(gegen), andere.map(s => [symbolSvg(s), `${WSYMBOLE[s].name} liegt nach dem Falten neben der blauen Fläche, nicht gegenüber.`])),
         erklaerung: [`Gefaltet liegen sich gegenüber: ${gegenueberPaare(wuerfel).join('; ')}.`, 'Tipp: In einer geraden Reihe liegt das übernächste Feld gegenüber.']
       };
     }
@@ -276,7 +287,7 @@ function faltvorlage(n) {
   if (n === 1) weg.push('Vier Felder im Quadrat (2 × 2) können nie Teil einer Würfel-Faltvorlage sein.');
   return {
     frage: 'Aus welcher Faltvorlage lässt sich ein Würfel falten?',
-    ...S.optionen(netzSvg(richtig), falsche.map(z => netzSvg(z))),
+    ...S.optionen(netzSvg(richtig), falsche.map(z => [netzSvg(z), hatBlock(z) ? 'Vier Felder bilden hier ein Quadrat (2 × 2). Daraus lässt sich nie ein Würfel falten.' : 'Beim Falten liegen hier zwei Flächen übereinander. Dafür bleibt eine Seite offen.'])),
     erklaerung: weg
   };
 }
@@ -316,7 +327,7 @@ function drehfigur(n) {
     if (eigen === formSchluessel(spiegel, false)) continue;
     const winkel = H.wahl(schritte);
     const winkelFalsch = H.mische(schritte.concat([0])).slice(0, 3);
-    const falsche = winkelFalsch.map(w => figurSvg(spiegel, w));
+    const falsche = winkelFalsch.map(w => [figurSvg(spiegel, w), 'Diese Figur ist gespiegelt. Durch Drehen allein entsteht sie nicht.']);
     let verschoben = false;
     if (n === 5) {
       for (let v = 0; v < 50 && !verschoben; v++) {
@@ -329,7 +340,7 @@ function drehfigur(n) {
         const nz = normiere(z);
         if (!zusammenhaengend(nz) || formSchluessel(nz, true) === formSchluessel(vorlage, true)) continue;
         if (Math.max(...nz.map(x => x[0])) > 4 || Math.max(...nz.map(x => x[1])) > 4) continue;
-        falsche[2] = figurSvg(nz, H.wahl(schritte));
+        falsche[2] = [figurSvg(nz, H.wahl(schritte)), 'Bei dieser Figur ist ein Feld verschoben. Sie hat eine andere Form als die Vorlage.'];
         verschoben = true;
       }
     }
@@ -500,11 +511,15 @@ function figurenZusammensetzen(n) {
     const loesung = S.svg(zb + 8, zh + 8, flaecheSvg(ziel, 22, '', true, 4, 4, (c, r) => 'ft' + belegung.get(c + ',' + r)), 'netz');
     const liste = keine ? H.mische(falsche) : H.mische([ziel].concat(falsche));
     const keineSvg = S.svg(100, 100, S.text(50, 40, 'Keine der', 'fk', 14) + S.text(50, 60, 'Figuren', 'fk', 14), 'form-bild');
+    const gruende = {};
+    falsche.forEach(z => { gruende[formSvg(z, gitter)] = 'Diese Figur hat die richtige Größe. Die Teile passen aber nicht lückenlos hinein.'; });
+    if (!keine) gruende[keineSvg] = 'Eine der Figuren lässt sich legen. Die Lösung unten zeigt, wie die Teile passen.';
     return {
       frage: 'Welche Figur lässt sich aus allen Teilen zusammensetzen? Die Teile dürfen gedreht werden.',
       bild: `<div class="bild-mitte">${S.svg(x - G + 4, hoehe + 8, inhalt, 'teile')}</div>`,
       antworten: liste.map(z => formSvg(z, gitter)).concat([keineSvg]),
       richtig: keine ? 4 : liste.indexOf(ziel),
+      gruende,
       svg: true,
       reihenfolgeFest: true,
       erklaerung: keine

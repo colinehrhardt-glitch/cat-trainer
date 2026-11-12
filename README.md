@@ -23,7 +23,8 @@ Reines HTML, CSS und JavaScript. Kein Framework, kein Build-Schritt. Läuft in S
 ### Übungsmodus
 - Meist 4 Antwortmöglichkeiten, bei Schlussfolgerungen, Wortflüssigkeit und Figuren zusammensetzen 5 (mit „Keine … ist richtig“)
 - Jeder Aufgabentyp startet mit kurzer Erklärung und Beispielaufgabe, der Reaktionstest mit Probelauf
-- Nach jeder Antwort: Lösung und Lösungsweg
+- Bei falscher Antwort: deine Antwort und die richtige nebeneinander, warum deine Antwort falsch ist, der Lösungsweg und wie man bei diesem Aufgabentyp vorgeht
+- Bei richtiger Antwort: Lösungsweg und Vorgehen eingeklappt zum Aufklappen
 - Schwierigkeit 1 bis 5 oder „Auto“ (Start nach Schulabschluss, zweimal richtig → schwerer, falsch → leichter)
 - Auswertung mit Fehlern zum Nachlesen und „Fehler nochmal üben“
 - Auf dem iPad im Querformat: Frage und Bild links, Antworten rechts
@@ -35,7 +36,7 @@ Reines HTML, CSS und JavaScript. Kein Framework, kein Build-Schritt. Läuft in S
 - Zeitlimit pro Aufgabe (geschätzt, Köln mit mehr Zeit), Antwort wählen und mit „Weiter“ bestätigen
 - Schwierigkeit passt sich an: richtig → schwerer, falsch → leichter; Köln startet eine Stufe höher
 - Kein Zurück, Lösungen erst am Ende, Reaktionstest im Bereich Konzentration
-- Ergebnis: Punkte, Niveau pro Bereich, ehrliche Einschätzung pro Laufbahn, die schwächsten Bereiche mit Tipps und „Jetzt üben“, alle Aufgaben mit Lösungsweg
+- Ergebnis: Punkte, Niveau pro Bereich, ehrliche Einschätzung pro Laufbahn, die schwächsten Bereiche mit Tipps und „Jetzt üben“, alle Aufgaben mit Lösungsweg und Erklärung der Fehler
 - Zeitlimits und Grenzwerte sind Schätzungen der App, die echten Werte sind nicht öffentlich
 
 Geplant: Stufe 4 (Statistik und Lernplan).
@@ -65,7 +66,7 @@ Safari und die Home-Bildschirm-App haben getrennte Speicher.
 | `gen-raum.js` | Generatoren für Würfel, Faltvorlagen, gedrehte Figuren und Figuren zusammensetzen |
 | `gen-technik.js` | Generatoren für Zahnräder, Hebel, Flaschenzüge und Physik |
 | `gen-konzentration.js` | Generatoren für Zeichen zählen, Symbole vergleichen, Merkfähigkeit und den Reaktionstest |
-| `aufgaben.js` | Bereiche, Aufgabentypen mit Erklärungen, alle festen Aufgaben und die Wortliste |
+| `aufgaben.js` | Bereiche, Aufgabentypen mit Erklärungen und Vorgehen, alle festen Aufgaben und die Wortliste |
 | `speicher.js` | Speichern im localStorage |
 | `kern.js` | Grundlagen: Zustand, Anzeige, Dialoge, gemeinsame Hilfen |
 | `uebung.js` | Übungsmodus: Aufgaben anzeigen, auswerten, Fehler wiederholen |
@@ -104,4 +105,4 @@ Feste Aufgaben werden mit den automatisch erzeugten Aufgaben gemischt. Typen ohn
 
 ## Nach Änderungen
 
-In `sw.js` die Versionsnummer in `VERSION` erhöhen (z. B. `cat-trainer-6`), damit die Offline-Version aktualisiert wird.
+In `sw.js` die Versionsnummer in `VERSION` erhöhen (z. B. `cat-trainer-7`), damit die Offline-Version aktualisiert wird.

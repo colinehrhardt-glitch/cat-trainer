@@ -196,6 +196,17 @@ function falscheKacheln(antwort, regeln, extra, anzahl) {
   return auswahl;
 }
 
+function kachelGrund(antwort, z) {
+  const teile = [];
+  if (z.form !== antwort.form) teile.push(`die Form (${FIG.namen[z.form]} statt ${FIG.namen[antwort.form]})`);
+  if (z.fuellung !== antwort.fuellung) teile.push(`die Füllung (${FIG.namen[z.fuellung]} statt ${FIG.namen[antwort.fuellung]})`);
+  if (z.anzahl !== antwort.anzahl) teile.push(`die Anzahl (${z.anzahl} statt ${antwort.anzahl})`);
+  if (mod360(z.drehung || 0) !== mod360(antwort.drehung || 0)) teile.push('die Drehung');
+  if (z.punkt !== antwort.punkt) teile.push('die Lage des Punktes');
+  if (!teile.length) return '';
+  return `Bei dieser Figur ${teile.length > 1 ? 'stimmen' : 'stimmt'} ${H.und(teile)} nicht.`;
+}
+
 function figurenreihe(n) {
   for (;;) {
     const f = H.wahl(FIGURENREIHEN.filter(x => n >= x.von && n <= x.bis)).f(n);
@@ -211,7 +222,12 @@ function figurenreihe(n) {
     return {
       frage: 'Welche Figur setzt die Reihe fort?',
       bild: `<div class="kachelreihe">${folge.map(kachel).join('')}<div class="kachel-offen">?</div></div>`,
-      ...S.optionen(kachel(antwort), falsche.map(kachel)),
+      ...S.optionen(kachel(antwort), falsche.map(z => {
+        const k = kachelSchluessel(z);
+        if (k === kachelSchluessel(zustand(4))) return [kachel(z), 'Das ist die letzte Figur der Reihe. Die Reihe muss aber einen Schritt weitergehen.'];
+        if (k === kachelSchluessel(zustand(6))) return [kachel(z), 'Diese Figur kommt erst einen Schritt später. Du hast einen Schritt übersprungen.'];
+        return [kachel(z), kachelGrund(antwort, z)];
+      })),
       erklaerung: f.regeln.map(r => r.text)
     };
   }
@@ -300,7 +316,7 @@ function matrix(n) {
     return {
       frage: 'Welche Figur gehört in das leere Feld?',
       bild: `<div class="matrix">${felder.join('')}</div>`,
-      ...S.optionen(kachel(antwort), falsche.map(kachel)),
+      ...S.optionen(kachel(antwort), falsche.map(z => [kachel(z), extra.some(x => kachelSchluessel(x) === kachelSchluessel(z)) ? 'Diese Figur steht schon in der Matrix. Für das leere Feld passt sie nicht.' : kachelGrund(antwort, z)])),
       erklaerung: regeln.map(g => g.text)
     };
   }

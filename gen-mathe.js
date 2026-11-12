@@ -1,9 +1,14 @@
 const abstaende = l => l.slice(1).map((x, i) => x - l[i]);
 const mitVorzeichen = d => (d < 0 ? '−' : '+') + fz(Math.abs(d));
 const schritt = (x, d) => `${fz(x)} ${d < 0 ? '−' : '+'} ${fz(Math.abs(d))} = ${fz(x + d)}`;
+const VON_LINKS = 'Du hast von links nach rechts gerechnet. Es gilt aber Punkt vor Strich: erst mal und geteilt, dann plus und minus.';
+const KLAMMER = 'Du hast die Klammer nicht beachtet. Was in der Klammer steht, rechnest du zuerst.';
+const UMGEKEHRT = 'Du hast wie bei einem normalen Dreisatz gerechnet. Hier ist es aber umgekehrt: Wird das eine mehr, wird das andere weniger.';
+const GLEICHER = 'Du hast den letzten Abstand einfach wiederholt. Die Abstände ändern sich aber.';
+const probe = (b, x, a) => [x, `Mach die Probe: ${fz(b)} × ${fz(x)} = ${fz(b * x)}, nicht ${fz(a)}.`];
 
 function rechnung(term, wert, falsch, erklaerung, format, regeln) {
-  return { frage: 'Rechne aus.', term: term + ' = ?', ...H.optionen(wert, falsch, format, regeln), erklaerung };
+  return { frage: 'Rechne aus.', term: term + ' = ?', ...H.optionen(wert, falsch, format, Object.assign({ stellen: true }, regeln)), erklaerung };
 }
 
 const GRUNDRECHNEN = {
@@ -20,11 +25,11 @@ const GRUNDRECHNEN = {
     },
     () => {
       const a = H.zufall(3, 9), b = H.zufall(4, 9), w = a * b;
-      return rechnung(`${a} × ${b}`, w, [w + a, w - a, w + b, w - b, w + 1], [`Einmaleins: ${a} × ${b} = ${w}`]);
+      return rechnung(`${a} × ${b}`, w, [[w + a, `Das wäre ${a} × ${b + 1}. Du bist im Einmaleins eine Reihe verrutscht.`], [w - a, `Das wäre ${a} × ${b - 1}. Du bist im Einmaleins eine Reihe verrutscht.`], [w + b, `Das wäre ${a + 1} × ${b}. Du bist im Einmaleins eine Reihe verrutscht.`], [w - b, `Das wäre ${a - 1} × ${b}. Du bist im Einmaleins eine Reihe verrutscht.`], w + 1], [`Einmaleins: ${a} × ${b} = ${w}`]);
     },
     () => {
       const b = H.zufall(3, 9), q = H.zufall(3, 9), a = b * q;
-      return rechnung(`${a} ÷ ${b}`, q, [q + 1, q - 1, q + 2, q - 2], [`${a} ÷ ${b} = ${q}, denn ${b} × ${q} = ${a}`]);
+      return rechnung(`${a} ÷ ${b}`, q, [q + 1, q - 1, q + 2, q - 2].map(x => probe(b, x, a)), [`${a} ÷ ${b} = ${q}, denn ${b} × ${q} = ${a}`]);
     }
   ],
   2: [
@@ -40,49 +45,49 @@ const GRUNDRECHNEN = {
     },
     () => {
       const a = H.zufall(1, 9) * 10 + H.zufall(1, 9), b = H.zufall(3, 9), z = a - a % 10, e = a % 10, w = a * b;
-      return rechnung(`${a} × ${b}`, w, [w + b, w - b, w + 10, z * b + e, w - 10],
+      return rechnung(`${a} × ${b}`, w, [[w + b, `Das wäre ${a + 1} × ${b}.`], [w - b, `Das wäre ${a - 1} × ${b}.`], w + 10, [z * b + e, `Du hast nur ${z} × ${b} gerechnet und ${e} dazugezählt. Die ${e} musst du auch mal ${b} nehmen.`], w - 10],
         [`Zerlege ${a} in ${z} + ${e}.`, `${z} × ${b} = ${z * b} und ${e} × ${b} = ${e * b}`, `${z * b} + ${e * b} = ${w}`]);
     },
     () => {
       const b = H.zufall(3, 9), q = H.zufall(12, 45), a = b * q;
-      return rechnung(`${a} ÷ ${b}`, q, [q + 1, q - 1, q + 10, q - 10, q + 2], [`${a} ÷ ${b} = ${q}, denn ${b} × ${q} = ${a}`]);
+      return rechnung(`${a} ÷ ${b}`, q, [q + 1, q - 1, q + 10, q - 10, q + 2].map(x => probe(b, x, a)), [`${a} ÷ ${b} = ${q}, denn ${b} × ${q} = ${a}`]);
     }
   ],
   3: [
     () => {
       const a = H.zufall(4, 40), b = H.zufall(3, 9), c = H.zufall(3, 12), t = [a, '+', b, '×', c], w = a + b * c;
-      return rechnung(H.term(t), w, [(a + b) * c, w + b, w - c, w + 1, w + 10], ['Punkt vor Strich: erst malnehmen, dann addieren.', H.rechenweg(t)]);
+      return rechnung(H.term(t), w, [[(a + b) * c, VON_LINKS], w + b, w - c, w + 1, w + 10], ['Punkt vor Strich: erst malnehmen, dann addieren.', H.rechenweg(t)]);
     },
     () => {
       let a, b, c, d;
       do { a = H.zufall(4, 9); b = H.zufall(5, 9); c = H.zufall(2, 6); d = H.zufall(2, 5); } while (a * b <= c * d);
       const t = [a, '×', b, '−', c, '×', d], w = a * b - c * d;
-      return rechnung(H.term(t), w, [(a * b - c) * d, a * b - c, w + d, w - c, w + 10], ['Punkt vor Strich: erst beide Malaufgaben, dann abziehen.', H.rechenweg(t)]);
+      return rechnung(H.term(t), w, [[(a * b - c) * d, VON_LINKS], [a * b - c, `Du hast nur ${c} abgezogen. Abgezogen wird aber ${c} × ${d} = ${c * d}.`], w + d, w - c, w + 10], ['Punkt vor Strich: erst beide Malaufgaben, dann abziehen.', H.rechenweg(t)]);
     },
     () => {
       const c = H.zufall(2, 9), b = c * H.zufall(2, 9), a = H.zufall(5, 50), t = [a, '+', b, '÷', c], w = a + b / c;
-      return rechnung(H.term(t), w, [(a + b) / c, w + c, w - 1, w + 1, a + b], ['Punkt vor Strich: erst teilen, dann addieren.', H.rechenweg(t)]);
+      return rechnung(H.term(t), w, [[(a + b) / c, VON_LINKS], w + c, w - 1, w + 1, [a + b, `Du hast vergessen, ${b} durch ${c} zu teilen.`]], ['Punkt vor Strich: erst teilen, dann addieren.', H.rechenweg(t)]);
     },
     () => {
       const x = H.zufall(1, 9) * 10 + H.zufall(1, 9), y = H.zufall(10, 99) * 10 + H.zufall(1, 9), w = (x * 10 + y) / 100;
       const fehler = Math.floor(x / 10) + Math.floor(y / 100) + (x % 10 + y % 100) / 100;
-      return rechnung(`${fz(x / 10)} + ${fz(y / 100)}`, w, [fehler, w + 0.1, w - 0.1, w + 1, w - 1],
+      return rechnung(`${fz(x / 10)} + ${fz(y / 100)}`, w, [[fehler, 'Die Kommas standen nicht untereinander. So hast du Zehntel und Hundertstel zusammengezählt.'], w + 0.1, w - 0.1, w + 1, w - 1],
         ['Schreib die Zahlen so, dass die Kommas untereinander stehen.', `${H.zahl(x / 10, 2, true)} + ${H.zahl(y / 100, 2, true)} = ${fz(w)}`], null, { ganz: false });
     },
     () => {
       const a = H.zufall(12, 39), b = H.zufall(11, 19), e = b % 10, w = a * b;
-      return rechnung(`${a} × ${b}`, w, [w + a, w - a, a * 10 + e, w + 10, w - 10],
+      return rechnung(`${a} × ${b}`, w, [[w + a, `Das wäre ${a} × ${b + 1}.`], [w - a, `Das wäre ${a} × ${b - 1}.`], [a * 10 + e, `Du hast ${a} × 10 gerechnet und nur ${e} dazugezählt. Rechne auch ${a} × ${e}.`], w + 10, w - 10],
         e ? [`Zerlege ${b} in 10 + ${e}.`, `${a} × 10 = ${a * 10} und ${a} × ${e} = ${a * e}`, `${a * 10} + ${a * e} = ${w}`] : [`${a} × ${b} = ${w}`]);
     }
   ],
   4: [
     () => {
       const a = H.zufall(4, 30), b = H.zufall(3, 20), c = H.zufall(3, 9), w = (a + b) * c;
-      return rechnung(`(${a} + ${b}) × ${c}`, w, [a + b * c, w + c, w - c, w + 10, a * c + b], ['Klammer zuerst.', `${a} + ${b} = ${a + b}`, `${a + b} × ${c} = ${w}`]);
+      return rechnung(`(${a} + ${b}) × ${c}`, w, [[a + b * c, KLAMMER], w + c, w - c, w + 10, [a * c + b, `Du hast nur ${a} mal ${c} genommen. Die ganze Klammer muss mal ${c} gerechnet werden.`]], ['Klammer zuerst.', `${a} + ${b} = ${a + b}`, `${a + b} × ${c} = ${w}`]);
     },
     () => {
       const a = H.zufall(3, 12), b = H.zufall(10, 30), c = H.zufall(2, b - 2), w = a * (b - c);
-      return rechnung(`${a} × (${b} − ${c})`, w, [a * b - c, w + a, w - a, w + 10, a * c], ['Klammer zuerst.', `${b} − ${c} = ${b - c}`, `${a} × ${b - c} = ${w}`]);
+      return rechnung(`${a} × (${b} − ${c})`, w, [[a * b - c, KLAMMER], [w + a, `Das wäre ${a} × ${b - c + 1}.`], [w - a, `Das wäre ${a} × ${b - c - 1}.`], w + 10, [a * c, `Du hast ${a} × ${c} gerechnet. Rechne zuerst die Klammer aus.`]], ['Klammer zuerst.', `${b} − ${c} = ${b - c}`, `${a} × ${b - c} = ${w}`]);
     },
     () => {
       const x = H.zufall(1, 9) * 10 + H.zufall(1, 9);
@@ -97,7 +102,7 @@ const GRUNDRECHNEN = {
       const t = H.zufall(4, 25), g = d * t, w = z * t;
       const weg = [`1/${d} von ${g} = ${g} ÷ ${d} = ${t}`];
       if (z > 1) weg.push(`${z}/${d} von ${g} = ${z} × ${t} = ${w}`);
-      return rechnung(`${z}/${d} von ${g}`, w, [t, g - w, w + t, g / z, w + z], weg);
+      return rechnung(`${z}/${d} von ${g}`, w, [[t, `Das ist erst 1/${d}. Du musst das Ergebnis noch mal ${z} nehmen.`], [g - w, `Das ist der Rest, also ${d - z}/${d} von ${g}.`], [w + t, `Das wären ${z + 1}/${d} von ${g}.`], [g / z, `Du hast durch den Zähler ${z} geteilt. Teile durch den Nenner ${d}.`], w + z], weg);
     },
     () => {
       const art = H.zufall(0, 2);
@@ -107,10 +112,10 @@ const GRUNDRECHNEN = {
       }
       if (art === 1) {
         const a = H.zufall(3, 12), b = H.zufall(3, 12), w = -a * b;
-        return rechnung(`(−${a}) × ${b}`, w, [-w, w - a, w + b, w + 1, w - 10], ['Minus mal Plus ergibt Minus.', `${a} × ${b} = ${a * b}, also (−${a}) × ${b} = ${fz(w)}`]);
+        return rechnung(`(−${a}) × ${b}`, w, [[-w, 'Minus mal Plus ergibt Minus. Das Ergebnis muss negativ sein.'], w - a, w + b, w + 1, w - 10], ['Minus mal Plus ergibt Minus.', `${a} × ${b} = ${a * b}, also (−${a}) × ${b} = ${fz(w)}`]);
       }
       const a = H.zufall(5, 40), b = H.zufall(5, 40), w = -a - b;
-      return rechnung(`−${a} − ${b}`, w, [-w, b - a, a - b, w + 1, w - 10], [`Von −${a} gehst du noch ${b} weiter ins Minus.`, `${a} + ${b} = ${a + b}, also −${a} − ${b} = ${fz(w)}`]);
+      return rechnung(`−${a} − ${b}`, w, [[-w, `Das Ergebnis ist negativ. Von −${a} geht es noch weiter ins Minus.`], [b - a, `Du hast −${a} + ${b} gerechnet. Minus ${b} heißt aber: noch weiter ins Minus.`], [a - b, `Du hast das Minus vor ${a} übersehen.`], w + 1, w - 10], [`Von −${a} gehst du noch ${b} weiter ins Minus.`, `${a} + ${b} = ${a + b}, also −${a} − ${b} = ${fz(w)}`]);
     }
   ],
   5: [
@@ -119,7 +124,7 @@ const GRUNDRECHNEN = {
         const e = H.zufall(2, 6), k = H.zufall(2, 9), s = e * k, c = H.zufall(1, s - 1), d = s - c, a = H.zufall(3, 12), b = H.zufall(3, 12);
         if (a * b <= s) continue;
         const w = a * b - k;
-        return rechnung(`${a} × ${b} − (${c} + ${d}) ÷ ${e}`, w, [a * b - s, (a * b - s) / e, w + e, w - 1, w + k],
+        return rechnung(`${a} × ${b} − (${c} + ${d}) ÷ ${e}`, w, [[a * b - s, `Du hast vergessen, die Klammer durch ${e} zu teilen.`], [(a * b - s) / e, `Du hast alles durch ${e} geteilt. Geteilt wird nur die Klammer, denn es gilt Punkt vor Strich.`], w + e, w - 1, w + k],
           ['Erst die Klammer, dann Punkt vor Strich.', `${c} + ${d} = ${s}`, `${a} × ${b} = ${a * b} und ${s} ÷ ${e} = ${k}`, `${a * b} − ${k} = ${w}`]);
       }
     },
@@ -135,9 +140,18 @@ const GRUNDRECHNEN = {
         const a = H.zufall(1, b - 1), c = H.zufall(1, d - 1);
         if (H.ggt(a, b) !== 1 || H.ggt(c, d) !== 1) continue;
         const n = H.kgv(b, d), za = a * n / b, zc = c * n / d, z = za + zc;
-        const kandidaten = [[a + c, b + d], [z + 1, n], [a * c, b * d], [z, b + d], [z - 1, n], [z + 2, n], [z, n * 2]]
+        const erweitern = 'Beim Erweitern auf den gemeinsamen Nenner ist ein Fehler passiert. Prüfe die neuen Zähler.';
+        const kandidaten = [
+          [a + c, b + d, 'Du hast Zähler und Nenner einfach zusammengezählt. Bei Brüchen brauchst du zuerst einen gemeinsamen Nenner.'],
+          [z + 1, n, erweitern],
+          [a * c, b * d, 'Du hast die Brüche malgenommen. Gefragt ist aber die Summe.'],
+          [z, b + d, `Der Zähler stimmt, der Nenner nicht. Der gemeinsame Nenner ist ${n}, nicht ${b} + ${d}.`],
+          [z - 1, n, erweitern],
+          [z + 2, n, erweitern],
+          [z, n * 2, `Der Nenner ist doppelt so groß wie nötig. Der gemeinsame Nenner ist ${n}.`]
+        ]
           .filter(([p, q]) => p > 0 && p * n !== z * q)
-          .map(([p, q]) => H.bruch(p, q));
+          .map(([p, q, grund]) => [H.bruch(p, q), grund]);
         const richtig = H.bruch(z, n);
         const weg = [`Gemeinsamer Nenner: ${n}`, `${a}/${b} = ${za}/${n} und ${c}/${d} = ${zc}/${n}`, `${za}/${n} + ${zc}/${n} = ${z}/${n}`];
         if (richtig !== `${z}/${n}`) weg.push(`Gekürzt: ${richtig}`);
@@ -146,7 +160,7 @@ const GRUNDRECHNEN = {
     },
     () => {
       const a = H.zufall(11, 20), b = H.zufall(2, a - 2), w = a * a - b * b;
-      return rechnung(`${a}² − ${b}²`, w, [(a - b) * (a - b), w + 1, w - 1, w + 2 * b, a * 2 - b * 2], [`${a}² = ${a * a} und ${b}² = ${b * b}`, `${a * a} − ${b * b} = ${w}`]);
+      return rechnung(`${a}² − ${b}²`, w, [[(a - b) * (a - b), `Du hast (${a} − ${b})² gerechnet. Rechne zuerst beide Quadrate aus und zieh dann ab.`], w + 1, w - 1, w + 2 * b, [a * 2 - b * 2, 'Du hast mal 2 gerechnet. Hoch 2 heißt aber: die Zahl mal sich selbst.']], [`${a}² = ${a * a} und ${b}² = ${b * b}`, `${a * a} − ${b * b} = ${w}`]);
     }
   ]
 };
@@ -163,7 +177,7 @@ const PROZENT = {
       const anteil = { 10: 'ein Zehntel', 25: 'ein Viertel', 50: 'die Hälfte' }[p];
       return {
         frage: `Wie viel sind ${p} % von ${fz(g)}?`,
-        ...H.optionen(w, [w * 2, w / 2, g - w, w + 10, w - 5]),
+        ...H.optionen(w, [[w * 2, `Das wären ${2 * p} %.`], [w / 2, `Das wären ${fz(p / 2)} %.`], [g - w, `Das ist der Rest, also ${100 - p} %. Gefragt sind ${p} %.`], w + 10, w - 5]),
         erklaerung: [`${p} % ist ${anteil}.`, `${fz(g)} ÷ ${teiler} = ${fz(w)}`]
       };
     }
@@ -173,7 +187,7 @@ const PROZENT = {
       const p = H.wahl([5, 15, 20, 30, 40, 75]), g = 20 * H.zufall(2, 30), w = g * p / 100;
       return {
         frage: `Wie viel sind ${p} % von ${fz(g)}?`,
-        ...H.optionen(w, [g * p / 1000, w + g / 20, w - g / 20, g - w, w * 2, w + 5]),
+        ...H.optionen(w, [g * p / 1000, [w + g / 20, `Das wären ${p + 5} %.`], [w - g / 20, `Das wären ${p - 5} %.`], [g - w, `Das ist der Rest, also ${100 - p} %. Gefragt sind ${p} %.`], [w * 2, `Das wären ${2 * p} %.`], w + 5]),
         erklaerung: [`1 % von ${fz(g)} = ${fz(g / 100)}`, `${p} % = ${p} × ${fz(g / 100)} = ${fz(w)}`]
       };
     },
@@ -182,7 +196,7 @@ const PROZENT = {
       const k = H.zufall(2, 20), g = n * k, w = z * k, p = z / n * 100;
       return {
         frage: `Wie viel Prozent sind ${fz(w)} von ${fz(g)}?`,
-        ...H.optionen(p, [p + 5, p - 5, p + 10, 100 - p, p * 2, p / 2], prozentText),
+        ...H.optionen(p, [p + 5, p - 5, p + 10, [100 - p, `Das ist der Rest. ${fz(g - w)} von ${fz(g)} sind ${fz(100 - p)} %.`], p * 2, p / 2], prozentText),
         erklaerung: [`${fz(w)} ÷ ${fz(g)} = ${H.zahl(w / g, 2)}`, `${H.zahl(w / g, 2)} sind ${fz(p)} %`]
       };
     }
@@ -192,7 +206,7 @@ const PROZENT = {
       const p = H.wahl([5, 10, 15, 20, 25, 30, 40, 60, 75]), g = 20 * H.zufall(2, 25), w = g * p / 100;
       return {
         frage: `${fz(w)} sind ${p} %. Wie viel sind 100 %?`,
-        ...H.optionen(g, [g + w, g - w, g / 2, g * 2, g + 20, w * p]),
+        ...H.optionen(g, [[g + w, `Das wären ${100 + p} %.`], [g - w, `Das wären ${100 - p} %.`], g / 2, g * 2, g + 20, [w * p, `Du hast ${fz(w)} mal ${p} genommen. Teile zuerst durch ${p}, dann hast du 1 %.`]]),
         erklaerung: [`1 % = ${fz(w)} ÷ ${p} = ${fz(w / p)}`, `100 % = 100 × ${fz(w / p)} = ${fz(g)}`]
       };
     },
@@ -201,7 +215,7 @@ const PROZENT = {
       const preis = 20 * H.zufall(2, 20), p = H.wahl([10, 15, 20, 25, 30, 40]), r = preis * p / 100, neu = preis - r;
       return {
         frage: `${ding} kostet ${fe(preis)}. Der Preis wird um ${p} % gesenkt. Was kostet ${er} jetzt?`,
-        ...H.optionen(neu, [preis - p, r, preis + r, neu + 5, neu - 5, neu + 10], fe),
+        ...H.optionen(neu, [[preis - p, `Du hast ${p} € abgezogen. Abgezogen werden aber ${p} % vom Preis.`], [r, 'Das ist nur die Ersparnis. Zieh sie noch vom alten Preis ab.'], [preis + r, 'Du hast die Ersparnis dazugezählt. Bei einer Preissenkung ziehst du sie ab.'], neu + 5, neu - 5, neu + 10], fe),
         erklaerung: [`${p} % von ${fe(preis)} = ${fe(r)}`, `${fe(preis)} − ${fe(r)} = ${fe(neu)}`]
       };
     },
@@ -209,7 +223,7 @@ const PROZENT = {
       const g = 100 * H.zufall(18, 40), p = H.wahl([2, 3, 4, 5, 2.5, 1.5]), r = g * p / 100, neu = g + r;
       return {
         frage: `Ein Gehalt von ${fe(g)} steigt um ${fz(p)} %. Wie hoch ist es danach?`,
-        ...H.optionen(neu, [g + r * 10, g - r, neu + 10, neu - 10, g + p * 100], fe, { ganz: false }),
+        ...H.optionen(neu, [[g + r * 10, 'Beim Prozentwert ist das Komma verrutscht.'], [g - r, 'Du hast die Erhöhung abgezogen. Das Gehalt steigt, also zählst du sie dazu.'], neu + 10, neu - 10, [g + p * 100, `Du hast ${fe(p * 100)} dazugezählt. Richtig sind ${fz(p)} % von ${fe(g)} = ${fe(r)}.`]], fe, { ganz: false }),
         erklaerung: [`1 % von ${fe(g)} = ${fe(g / 100)}`, `${fz(p)} % = ${fz(p)} × ${fe(g / 100)} = ${fe(r)}`, `${fe(g)} + ${fe(r)} = ${fe(neu)}`]
       };
     }
@@ -221,7 +235,7 @@ const PROZENT = {
       const neu = steigt ? g + d : g - d;
       return {
         frage: `Ein Preis ${steigt ? 'steigt' : 'sinkt'} von ${fe(g)} auf ${fe(neu)}. Um wie viel Prozent ${steigt ? 'ist er gestiegen' : 'ist er gesunken'}?`,
-        ...H.optionen(p, [d, p + 2, p - 2, p + 5, d / neu * 100], prozentText),
+        ...H.optionen(p, [[d, 'Das ist die Änderung in Euro. Teile sie noch durch den alten Preis.'], p + 2, p - 2, p + 5, [d / neu * 100, 'Du hast durch den neuen Preis geteilt. Teile durch den alten Preis.']], prozentText),
         erklaerung: [`Änderung: ${fe(Math.max(g, neu))} − ${fe(Math.min(g, neu))} = ${fe(d)}`, 'Teile die Änderung durch den alten Preis.', `${fe(d)} ÷ ${fe(g)} = ${H.zahl(d / g, 2)}, also ${p} %`]
       };
     },
@@ -229,7 +243,7 @@ const PROZENT = {
       const netto = 50 * H.zufall(2, 40), steuer = netto * 19 / 100, brutto = netto + steuer;
       return {
         frage: `Ein Gerät kostet ohne Mehrwertsteuer ${fe(netto)}. Dazu kommen 19 % Mehrwertsteuer. Was kostet es insgesamt?`,
-        ...H.optionen(brutto, [netto + 19, steuer, brutto + 10, brutto - 10, netto * 1.9, brutto + 19], fe, { ganz: false }),
+        ...H.optionen(brutto, [[netto + 19, 'Du hast 19 € dazugezählt. Richtig sind 19 % vom Preis.'], [steuer, 'Das ist nur die Steuer. Zähl sie noch zum Preis dazu.'], brutto + 10, brutto - 10, [netto * 1.9, 'Du hast mal 1,9 gerechnet. 19 % Aufschlag heißt mal 1,19.'], brutto + 19], fe, { ganz: false }),
         erklaerung: [`1 % von ${fe(netto)} = ${fe(netto / 100)}`, `19 % = 19 × ${fe(netto / 100)} = ${fe(steuer)}`, `${fe(netto)} + ${fe(steuer)} = ${fe(brutto)}`]
       };
     }
@@ -239,7 +253,7 @@ const PROZENT = {
       const p = H.wahl([10, 20, 25, 40, 50]), alt = 20 * H.zufall(3, 30), neu = alt * (100 - p) / 100;
       return {
         frage: `Nach einer Preissenkung um ${p} % kostet ein Gerät ${fe(neu)}. Was hat es vorher gekostet?`,
-        ...H.optionen(alt, [neu * (100 + p) / 100, neu + p, alt + 10, alt - 10, neu * 2], fe, { ganz: false }),
+        ...H.optionen(alt, [[neu * (100 + p) / 100, `Du hast ${p} % auf den neuen Preis aufgeschlagen. Die ${p} % beziehen sich aber auf den alten Preis.`], [neu + p, `Du hast ${p} € dazugezählt, statt mit Prozent zu rechnen.`], alt + 10, alt - 10, [neu * 2, 'Du hast den Preis verdoppelt. Rechne mit dem Anteil, der nach der Senkung übrig bleibt.']], fe, { ganz: false }),
         erklaerung: [`${fe(neu)} sind ${100 - p} % des alten Preises.`, `1 % = ${fe(neu)} ÷ ${100 - p} = ${fe(alt / 100)}`, `100 % = 100 × ${fe(alt / 100)} = ${fe(alt)}`]
       };
     },
@@ -249,7 +263,7 @@ const PROZENT = {
       const zwei = z * p / 100, ende = hoch ? z - zwei : z + zwei;
       return {
         frage: `Ein Preis von ${fe(preis)} ${hoch ? 'steigt' : 'sinkt'} um ${p} % und ${hoch ? 'sinkt' : 'steigt'} danach wieder um ${p} %. Wie hoch ist er jetzt?`,
-        ...H.optionen(ende, [preis, preis - p, ende - 10, ende + 10, z], fe, { ganz: false }),
+        ...H.optionen(ende, [[preis, 'Das ist der Startpreis. Der zweite Schritt bezieht sich auf den neuen Preis, deshalb kommt nicht der alte Preis heraus.'], preis - p, ende - 10, ende + 10, [z, 'Das ist der Preis nach dem ersten Schritt. Der zweite Schritt fehlt noch.']], fe, { ganz: false }),
         erklaerung: [`Nach dem ersten Schritt: ${fe(z)}`, 'Der zweite Schritt bezieht sich auf diesen neuen Preis.', `${p} % von ${fe(z)} = ${fe(zwei)}`, `${fe(z)} ${hoch ? '−' : '+'} ${fe(zwei)} = ${fe(ende)}`]
       };
     },
@@ -257,7 +271,7 @@ const PROZENT = {
       const k = 1000 * H.zufall(1, 5), p = H.wahl([2, 3, 4, 5, 10]), z1 = k * p / 100, k1 = k + z1, z2 = k1 * p / 100, k2 = k1 + z2;
       return {
         frage: `Du legst ${fe(k)} für 2 Jahre zu ${p} % Zinsen an. Die Zinsen werden mitverzinst. Wie viel Geld hast du nach 2 Jahren?`,
-        ...H.optionen(k2, [k + 2 * z1, k2 + 10, k2 - 10, k1, k2 + z1], fe, { ganz: false }),
+        ...H.optionen(k2, [[k + 2 * z1, 'Du hast zweimal dieselben Zinsen gerechnet. Im zweiten Jahr gibt es auch Zinsen auf die Zinsen.'], k2 + 10, k2 - 10, [k1, 'Das ist das Geld nach einem Jahr. Gefragt sind zwei Jahre.'], k2 + z1], fe, { ganz: false }),
         erklaerung: [`Nach 1 Jahr: ${fe(k)} + ${fe(z1)} = ${fe(k1)}`, `Zinsen im 2. Jahr: ${p} % von ${fe(k1)} = ${fe(z2)}`, `Nach 2 Jahren: ${fe(k1)} + ${fe(z2)} = ${fe(k2)}`]
       };
     }
@@ -271,10 +285,10 @@ const DREISATZ = {
       const e = H.zufall(min, max), a = H.zufall(2, 6);
       let b;
       do { b = H.zufall(2, 12); } while (b === a);
-      const g = a * e, w = b * e;
+      const g = a * e, w = b * e, stueck = k => (k === 1 ? `1 ${ein}` : `${k} ${mehr}`);
       return {
         frage: `${a} ${mehr} kosten ${fe(g)}. Wie viel kosten ${b} ${mehr}?`,
-        ...H.optionen(w, [g + (b - a), g * b, w + e, w - e, w + 1], fe),
+        ...H.optionen(w, [[g + (b - a), `Du hast einfach ${b > a ? `${b - a} € dazugezählt` : `${a - b} € abgezogen`}. Rechne zuerst aus, was 1 ${ein} kostet.`], [g * b, `Du hast den Preis für ${a} ${mehr} mal ${b} genommen. Rechne zuerst aus, was 1 ${ein} kostet.`], [w + e, `Das wäre der Preis für ${stueck(b + 1)}.`], [w - e, `Das wäre der Preis für ${stueck(b - 1)}.`], w + 1], fe),
         erklaerung: [`1 ${ein} kostet ${fe(g)} ÷ ${a} = ${fe(e)}`, `${b} ${mehr} kosten ${b} × ${fe(e)} = ${fe(w)}`]
       };
     }
@@ -288,7 +302,7 @@ const DREISATZ = {
       const g = a * u / 100, w = b * u / 100;
       return {
         frage: `${a} ${einh} ${ware} kosten ${fe(g)}. Wie viel kosten ${b} ${einh}?`,
-        ...H.optionen(w, [g + (b - a), w + u / 100, w - u / 100, w + 1, w - 0.5, g * b], fe, { ganz: false }),
+        ...H.optionen(w, [[g + (b - a), `Du hast einfach ${b > a ? `${b - a} € dazugezählt` : `${a - b} € abgezogen`}. Rechne zuerst aus, was 1 ${einh} kostet.`], [w + u / 100, `Das wäre der Preis für ${b + 1} ${einh}.`], [w - u / 100, `Das wäre der Preis für ${b - 1} ${einh}.`], w + 1, w - 0.5, [g * b, `Du hast den Preis für ${a} ${einh} mal ${b} genommen. Rechne zuerst aus, was 1 ${einh} kostet.`]], fe, { ganz: false }),
         erklaerung: [`1 ${einh} kostet ${fe(g)} ÷ ${a} = ${fe(u / 100)}`, `${b} ${einh} kosten ${b} × ${fe(u / 100)} = ${fe(w)}`]
       };
     },
@@ -296,7 +310,7 @@ const DREISATZ = {
       const v = H.zufall(5, 12), s = 50 * H.zufall(3, 16), l = v * s / 100;
       return {
         frage: `Ein Fahrzeug verbraucht ${v} Liter auf 100 km. Wie viele Liter braucht es für ${s} km?`,
-        ...H.optionen(l, [l + v, l - v, v * s / 10, l + v / 2, l * 2], x => H.einheit(x, 'l'), { ganz: false }),
+        ...H.optionen(l, [[l + v, 'Das wäre der Verbrauch für 100 km mehr.'], [l - v, 'Das wäre der Verbrauch für 100 km weniger.'], v * s / 10, [l + v / 2, 'Das wäre der Verbrauch für 50 km mehr.'], [l * 2, `Das wäre der Verbrauch für ${2 * s} km.`]], x => H.einheit(x, 'l'), { ganz: false }),
         erklaerung: [`Auf 1 km: ${v} l ÷ 100 = ${fz(v / 100)} l`, `Auf ${s} km: ${s} × ${fz(v / 100)} l = ${fz(l)} l`]
       };
     }
@@ -314,7 +328,7 @@ const DREISATZ = {
         const arbeit = H.wahl(['ein Zeltlager aufzubauen', 'einen Lkw zu entladen', 'eine Halle zu streichen', 'einen Graben auszuheben']);
         return {
           frage: `${a} Helfer brauchen ${t / a} Stunden, um ${arbeit}. Wie lange brauchen ${b} Helfer?`,
-          ...H.optionen(t / b, [t / a * b / a, t / a + (a - b), t / a, t / b + 1, t / b - 1, t / b + 2], x => H.einheit(x, 'Stunden')),
+          ...H.optionen(t / b, [[t / a * b / a, UMGEKEHRT], [t / a + (a - b), 'Du hast nur den Unterschied bei der Zahl der Helfer verrechnet. Rechne aus, wie lange 1 Helfer bräuchte.'], [t / a, `Das ist die Zeit für ${a} Helfer. Gefragt ist die Zeit für ${b} Helfer.`], t / b + 1, t / b - 1, t / b + 2], x => H.einheit(x, 'Stunden')),
           erklaerung: ['Mehr Helfer brauchen weniger Zeit. Das ist ein umgekehrter Dreisatz.', `1 Helfer bräuchte ${a} × ${t / a} = ${t} Stunden.`, `${b} Helfer brauchen ${t} ÷ ${b} = ${t / b} Stunden.`]
         };
       }
@@ -330,7 +344,7 @@ const DREISATZ = {
         const p2 = H.wahl(moeglich), d2 = t / p2;
         return {
           frage: `Ein Vorrat reicht für ${p1} Personen ${d1} Tage. Wie lange reicht er für ${p2} Personen?`,
-          ...H.optionen(d2, [d1 * p2 / p1, d1 + p1 - p2, d2 + 1, d2 - 1, d2 + 2], x => H.einheit(x, 'Tage')),
+          ...H.optionen(d2, [[d1 * p2 / p1, UMGEKEHRT], [d1 + p1 - p2, 'Du hast nur den Unterschied bei der Personenzahl verrechnet. Rechne aus, wie lange der Vorrat für 1 Person reicht.'], d2 + 1, d2 - 1, d2 + 2], x => H.einheit(x, 'Tage')),
           erklaerung: [`${p2 > p1 ? 'Mehr' : 'Weniger'} Personen bedeutet ${p2 > p1 ? 'weniger' : 'mehr'} Tage. Das ist ein umgekehrter Dreisatz.`, `Für 1 Person: ${p1} × ${d1} = ${t} Tage`, `Für ${p2} Personen: ${t} ÷ ${p2} = ${d2} Tage`]
         };
       }
@@ -344,7 +358,7 @@ const DREISATZ = {
         const v2 = H.wahl(moeglich), t2 = s / v2;
         return {
           frage: `Bei ${v1} km/h dauert eine Fahrt ${H.dauer(t1)}. Wie lange dauert sie bei ${v2} km/h?`,
-          ...H.optionen(t2, [t1 * v2 / v1, t1, t2 + 0.5, t2 - 0.25, t2 + 0.25], H.dauer, { ganz: false }),
+          ...H.optionen(t2, [[t1 * v2 / v1, UMGEKEHRT], [t1, 'Das ist die alte Fahrzeit. Bei einer anderen Geschwindigkeit ändert sich die Zeit.'], t2 + 0.5, t2 - 0.25, t2 + 0.25], H.dauer, { ganz: false }),
           erklaerung: [`${v2 > v1 ? 'Schneller' : 'Langsamer'} fahren bedeutet ${v2 > v1 ? 'weniger' : 'mehr'} Zeit.`, `Strecke: ${v1} km/h × ${fz(t1)} h = ${fz(s)} km`, `${fz(s)} km ÷ ${v2} km/h = ${H.dauer(t2)}`]
         };
       }
@@ -358,7 +372,7 @@ const DREISATZ = {
       const w1 = m1 * h1 * r, w2 = m2 * h2 * r;
       return {
         frage: `${m1} Maschinen stellen in ${h1} Stunden ${fz(w1)} Teile her. Wie viele Teile stellen ${m2} Maschinen in ${h2} Stunden her?`,
-        ...H.optionen(w2, [w1 * m2 / m1, w1 * h2 / h1, w2 + r, w2 - r, w2 + 10 * r]),
+        ...H.optionen(w2, [[w1 * m2 / m1, `Du hast nur die Maschinen umgerechnet. Die Stunden ändern sich auch, von ${h1} auf ${h2}.`], [w1 * h2 / h1, `Du hast nur die Stunden umgerechnet. Die Maschinen ändern sich auch, von ${m1} auf ${m2}.`], w2 + r, w2 - r, w2 + 10 * r]),
         erklaerung: [`1 Maschine in 1 Stunde: ${fz(w1)} ÷ ${m1} ÷ ${h1} = ${r} Teile`, `${m2} Maschinen in ${h2} Stunden: ${r} × ${m2} × ${h2} = ${fz(w2)} Teile`]
       };
     },
@@ -371,7 +385,7 @@ const DREISATZ = {
         const ga = n => n === 1 ? '1 Garage' : `${n} Garagen`;
         return {
           frage: `${a1} Arbeiter bauen in ${d1} Tagen ${ga(g1)}. Wie viele Tage brauchen ${a2} Arbeiter für ${ga(g2)}?`,
-          ...H.optionen(d2, [d1 * a2 / a1, d1 * g2 / g1, d2 + 1, d2 - 1, d2 + 2], x => H.einheit(x, 'Tage')),
+          ...H.optionen(d2, [[d1 * a2 / a1, 'Du hast die Garagen vergessen und die Arbeiter normal gerechnet. Mehr Arbeiter brauchen aber weniger Zeit.'], [d1 * g2 / g1, 'Du hast nur die Garagen umgerechnet. Die Zahl der Arbeiter ändert sich auch.'], d2 + 1, d2 - 1, d2 + 2], x => H.einheit(x, 'Tage')),
           erklaerung: [`1 Arbeiter bräuchte für 1 Garage ${a1} × ${d1} ÷ ${g1} = ${c} Tage.`, `${a2} Arbeiter für ${ga(g2)}: ${c} × ${g2} ÷ ${a2} = ${d2} Tage`]
         };
       }
@@ -388,7 +402,7 @@ const TEXTAUFGABEN = [
       const schein = [500, 1000, 2000].find(s => s >= summe + 50), r = schein - summe;
       return {
         frage: `Du kaufst ${anz} ${dinge} zu je ${fe(p / 100)} und ${zweit} für ${fe(q / 100)}. Du zahlst mit ${fe(schein / 100)}. Wie viel Geld bekommst du zurück?`,
-        ...H.optionen(r / 100, [(schein - p - q) / 100, summe / 100, (r + 10) / 100, (r - 10) / 100, (r + 100) / 100], fe, { ganz: false }),
+        ...H.optionen(r / 100, [[(schein - p - q) / 100, `Du hast nur 1 ${ding} gerechnet. Du kaufst aber ${anz}.`], [summe / 100, 'Das ist der Preis für den Einkauf. Gefragt ist das Rückgeld.'], (r + 10) / 100, (r - 10) / 100, (r + 100) / 100], fe, { ganz: false }),
         erklaerung: [`${dinge}: ${anz} × ${fe(p / 100)} = ${fe(anz * p / 100)}`, `Zusammen: ${fe(anz * p / 100)} + ${fe(q / 100)} = ${fe(summe / 100)}`, `Rückgeld: ${fe(schein / 100)} − ${fe(summe / 100)} = ${fe(r / 100)}`]
       };
     }
@@ -412,7 +426,7 @@ const TEXTAUFGABEN = [
         frage: n === 1
           ? `Ein Bus fährt um ${H.uhr(start)} ab und ist ${dauer} Minuten unterwegs. Wann kommt er an?`
           : `Ein Zug fährt um ${H.uhr(start)} ab. Die Fahrt dauert ${H.dauer(dauer / 60)}. Wann kommt er an?`,
-        ...H.optionen(ende, [ende - 60, ende + 60, ende + 10, ende - 10, ende + 5], H.uhr),
+        ...H.optionen(ende, [[ende - 60, 'Du hast eine Stunde zu wenig gerechnet.'], [ende + 60, 'Du hast eine Stunde zu viel gerechnet.'], [ende + 10, 'Das sind 10 Minuten zu viel.'], [ende - 10, 'Das sind 10 Minuten zu wenig.'], [ende + 5, 'Das sind 5 Minuten zu viel.']], H.uhr),
         erklaerung: weg
       };
     }
@@ -422,7 +436,7 @@ const TEXTAUFGABEN = [
       const reihen = H.zufall(3, 9), je = H.zufall(4, 12), kaputt = H.zufall(2, 9), alle = reihen * je, rest = alle - kaputt;
       return {
         frage: `In einer Kiste stehen ${reihen} Reihen mit je ${je} Flaschen. ${kaputt} Flaschen sind zerbrochen. Wie viele Flaschen sind noch ganz?`,
-        ...H.optionen(rest, [alle, alle + kaputt, rest + 1, rest - 1, rest - reihen]),
+        ...H.optionen(rest, [[alle, 'Das sind alle Flaschen. Die zerbrochenen musst du noch abziehen.'], [alle + kaputt, 'Du hast die zerbrochenen Flaschen dazugezählt. Sie müssen abgezogen werden.'], rest + 1, rest - 1, rest - reihen]),
         erklaerung: [`Flaschen: ${reihen} × ${je} = ${alle}`, `Noch ganz: ${alle} − ${kaputt} = ${rest}`]
       };
     }
@@ -433,12 +447,12 @@ const TEXTAUFGABEN = [
       if (Math.random() < 0.5) {
         return {
           frage: `Ein Fahrzeug fährt ${H.dauer(t)} lang mit ${v} km/h. Wie weit kommt es?`,
-          ...H.optionen(s, [v * Math.floor(t), s + v / 2, s - v / 2, s + 10, s + v], x => H.einheit(x, 'km')),
+          ...H.optionen(s, [[v * Math.floor(t), 'Du hast die halbe Stunde vergessen.'], [s + v / 2, 'Das wäre eine halbe Stunde mehr.'], [s - v / 2, 'Das wäre eine halbe Stunde weniger.'], s + 10, [s + v, 'Das wäre eine Stunde mehr.']], x => H.einheit(x, 'km')),
           erklaerung: ['Strecke = Geschwindigkeit × Zeit', `${v} km/h × ${fz(t)} h = ${fz(s)} km`]
         };
       }
       const falsch = [t + 0.5, t - 0.5, t + 0.25, t + 1];
-      if (t % 1) falsch.push(Math.floor(t) + 50 / 60);
+      if (t % 1) falsch.push([Math.floor(t) + 50 / 60, 'Du hast 0,5 Stunden als 50 Minuten gelesen. Eine halbe Stunde sind 30 Minuten.']);
       return {
         frage: `Ein Fahrzeug fährt mit ${v} km/h. Wie lange braucht es für ${fz(s)} km?`,
         ...H.optionen(t, falsch, H.dauer, { ganz: false }),
@@ -457,7 +471,7 @@ const TEXTAUFGABEN = [
         const summe = k * schnitt;
         return {
           frage: `Bei ${k === 4 ? 'vier' : 'fünf'} Tests erreichst du ${H.und(werte.map(String))} Punkte. Wie hoch ist dein Durchschnitt?`,
-          ...H.optionen(schnitt, [schnitt + 1, schnitt - 1, schnitt + 2, summe / (k - 1), schnitt - 2], x => H.einheit(x, 'Punkte')),
+          ...H.optionen(schnitt, [schnitt + 1, schnitt - 1, schnitt + 2, [summe / (k - 1), `Du hast durch ${k - 1} geteilt. Es sind aber ${k} Tests.`], schnitt - 2], x => H.einheit(x, 'Punkte')),
           erklaerung: [`Summe: ${werte.join(' + ')} = ${summe}`, `Durchschnitt: ${summe} ÷ ${k} = ${schnitt} Punkte`]
         };
       }
@@ -469,7 +483,7 @@ const TEXTAUFGABEN = [
       const ding = H.wahl(['Ein Fahrrad', 'Ein Handy', 'Ein Laptop', 'Ein Sofa']);
       return {
         frage: `${ding} kostet ${fe(preis)}. Du zahlst ${fe(an)} an. Den Rest zahlst du in ${n} gleichen Raten. Wie hoch ist eine Rate?`,
-        ...H.optionen(rate, [preis / n, (preis + an) / n, rate + 5, rate - 5, rate + 10], fe, { ganz: false }),
+        ...H.optionen(rate, [[preis / n, 'Du hast die Anzahlung vergessen. Zieh sie zuerst vom Preis ab.'], [(preis + an) / n, 'Du hast die Anzahlung dazugezählt. Sie wird abgezogen.'], rate + 5, rate - 5, rate + 10], fe, { ganz: false }),
         erklaerung: [`Rest: ${fe(preis)} − ${fe(an)} = ${fe(preis - an)}`, `Eine Rate: ${fe(preis - an)} ÷ ${n} = ${fe(rate)}`]
       };
     }
@@ -482,7 +496,7 @@ const TEXTAUFGABEN = [
         const pause = H.wahl([15, 20, 30, 45, 60]), gesamt = t + pause / 60;
         return {
           frage: `Eine Gruppe marschiert ${fz(s)} km mit ${fz(v)} km/h. Unterwegs macht sie insgesamt ${pause} Minuten Pause. Wie lange ist sie insgesamt unterwegs?`,
-          ...H.optionen(gesamt, [t, gesamt + 0.5, gesamt - 0.25, t + 2 * pause / 60, gesamt + 0.25], H.dauer, { ganz: false }),
+          ...H.optionen(gesamt, [[t, 'Das ist nur die Gehzeit. Die Pause fehlt noch.'], gesamt + 0.5, gesamt - 0.25, [t + 2 * pause / 60, 'Du hast die Pause doppelt gezählt.'], gesamt + 0.25], H.dauer, { ganz: false }),
           erklaerung: [`Gehzeit: ${fz(s)} km ÷ ${fz(v)} km/h = ${H.dauer(t)}`, `Mit Pause: ${H.dauer(t)} + ${pause} min = ${H.dauer(gesamt)}`]
         };
       }
@@ -493,7 +507,7 @@ const TEXTAUFGABEN = [
       const v = H.zufall(5, 9), s = 100 * H.zufall(2, 8), preis = H.zufall(15, 20) / 10, liter = v * s / 100, kosten = liter * preis;
       return {
         frage: `Ein Auto verbraucht ${v} Liter auf 100 km. Ein Liter Benzin kostet ${fe(preis)}. Was kostet eine Fahrt über ${s} km?`,
-        ...H.optionen(kosten, [v * preis, kosten + v * preis, kosten - 2 * preis, kosten + 5, kosten - 5], fe, { ganz: false }),
+        ...H.optionen(kosten, [[v * preis, 'Das sind nur die Kosten für 100 km.'], [kosten + v * preis, 'Das wären die Kosten für 100 km mehr.'], kosten - 2 * preis, kosten + 5, kosten - 5], fe, { ganz: false }),
         erklaerung: [`Verbrauch: ${s / 100} × ${v} l = ${liter} l`, `Kosten: ${liter} × ${fe(preis)} = ${fe(kosten)}`]
       };
     }
@@ -503,7 +517,7 @@ const TEXTAUFGABEN = [
       const k = 100 * H.zufall(10, 60), p = H.wahl([1, 1.5, 2, 2.5, 3, 4]), z = k * p / 100;
       return {
         frage: `Du legst ${fe(k)} für ein Jahr zu ${fz(p)} % Zinsen an. Wie viel Zinsen bekommst du?`,
-        ...H.optionen(z, [z * 10, z / 10, z + k / 100, k + z, z - k / 200], fe, { ganz: false }),
+        ...H.optionen(z, [z * 10, z / 10, [z + k / 100, `Das wären ${fz(p + 1)} % Zinsen.`], [k + z, 'Das ist das ganze Guthaben. Gefragt sind nur die Zinsen.'], [z - k / 200, `Das wären ${fz(p - 0.5)} % Zinsen.`]], fe, { ganz: false }),
         erklaerung: p === 1 ? [`1 % von ${fe(k)} = ${fe(z)}`] : [`1 % von ${fe(k)} = ${fe(k / 100)}`, `${fz(p)} % = ${fz(p)} × ${fe(k / 100)} = ${fe(z)}`]
       };
     }
@@ -517,7 +531,7 @@ const TEXTAUFGABEN = [
         const mal = { 2: 'doppelt', 3: 'dreimal', 4: 'viermal' }[m];
         return {
           frage: `${eltern} ist heute ${k}-mal so alt wie ${kind}. In ${j} Jahren ist ${eltern.endsWith('Vater') ? 'er' : 'sie'} nur noch ${mal} so alt. Wie alt ist ${kind} heute?`,
-          ...H.optionen(s, [alt, s + 1, s - 1, s + 2, j], x => H.einheit(x, 'Jahre')),
+          ...H.optionen(s, [[alt, `Das ist das Alter ${eltern.endsWith('Vater') ? 'des Vaters' : 'der Mutter'}. Gefragt ist das Kind.`], s + 1, s - 1, s + 2, [j, 'Das ist die Zahl der Jahre aus der Frage, nicht das Alter.']], x => H.einheit(x, 'Jahre')),
           erklaerung: [
             `Alter des Kindes heute: x. Dann ist ${eltern.endsWith('Vater') ? 'der Vater' : 'die Mutter'} ${k}x.`,
             `In ${j} Jahren: ${k}x + ${j} = ${m} × (x + ${j})`,
@@ -533,7 +547,7 @@ const TEXTAUFGABEN = [
       const v1 = 10 * H.zufall(4, 10), v2 = 10 * H.zufall(4, 10), t = H.wahl([1, 1.5, 2, 2.5, 3, 4]), s = (v1 + v2) * t;
       return {
         frage: `Zwei Fahrzeuge sind ${fz(s)} km voneinander entfernt. Sie fahren aufeinander zu, eines mit ${v1} km/h, das andere mit ${v2} km/h. Nach welcher Zeit treffen sie sich?`,
-        ...H.optionen(t, [s / v1, s / v2, t + 0.5, t - 0.5, t * 2], H.dauer, { ganz: false }),
+        ...H.optionen(t, [[s / v1, 'Du hast nur ein Fahrzeug beachtet. Beide fahren aufeinander zu, also zählen beide Geschwindigkeiten.'], [s / v2, 'Du hast nur ein Fahrzeug beachtet. Beide fahren aufeinander zu, also zählen beide Geschwindigkeiten.'], t + 0.5, t - 0.5, [t * 2, 'Das ist doppelt so lang. Beide fahren gleichzeitig.']], H.dauer, { ganz: false }),
         erklaerung: [`Sie kommen sich pro Stunde ${v1} km + ${v2} km = ${v1 + v2} km näher.`, `${fz(s)} km ÷ ${v1 + v2} km/h = ${H.dauer(t)}`]
       };
     }
@@ -547,7 +561,7 @@ const TEXTAUFGABEN = [
         frage: pumpe
           ? `Pumpe A füllt einen Tank in ${a} Stunden, Pumpe B in ${b} Stunden. Wie lange brauchen beide zusammen?`
           : `Lena streicht einen Zaun allein in ${a} Stunden, Ben in ${b} Stunden. Wie lange brauchen beide zusammen?`,
-        ...H.optionen(t, [(a + b) / 2, Math.abs(a - b), Math.min(a, b) / 2, t + 1, t - 1], H.dauer, { ganz: false }),
+        ...H.optionen(t, [[(a + b) / 2, 'Du hast den Durchschnitt genommen. Zusammen geht es aber schneller als jeder allein.'], [Math.abs(a - b), 'Der Unterschied der Zeiten hilft hier nicht. Rechne aus, wie viel beide zusammen pro Stunde schaffen.'], [Math.min(a, b) / 2, 'Das würde nur stimmen, wenn beide gleich schnell wären.'], t + 1, t - 1], H.dauer, { ganz: false }),
         erklaerung: [`Pro Stunde schafft ${pumpe ? 'Pumpe A' : 'Lena'} 1/${a} und ${pumpe ? 'Pumpe B' : 'Ben'} 1/${b} der Arbeit.`, `Zusammen: 1/${a} + 1/${b} = ${H.bruch(a + b, a * b)} pro Stunde`, `Also brauchen beide ${H.dauer(t)}.`]
       };
     }
@@ -557,7 +571,7 @@ const TEXTAUFGABEN = [
       const k = H.zufall(3, 5), a1 = H.zufall(10, 18), a2 = a1 + H.zufall(1, 3), noetig = (k + 1) * a2 - k * a1;
       return {
         frage: `Nach ${k} Tests hast du im Schnitt ${a1} Punkte. Wie viele Punkte brauchst du im nächsten Test, um auf einen Schnitt von ${a2} zu kommen?`,
-        ...H.optionen(noetig, [a2 + (a2 - a1), a2, noetig + 1, noetig - 1, noetig + 2], x => H.einheit(x, 'Punkte')),
+        ...H.optionen(noetig, [[a2 + (a2 - a1), 'Du hast den Unterschied nur einmal dazugezählt. Er fehlt aber bei allen bisherigen Tests.'], [a2, 'Mit dem Ziel-Schnitt allein steigt der Durchschnitt nicht. Du musst die fehlenden Punkte ausgleichen.'], noetig + 1, noetig - 1, noetig + 2], x => H.einheit(x, 'Punkte')),
         erklaerung: [`Bisher: ${k} × ${a1} = ${k * a1} Punkte`, `Ziel: ${k + 1} × ${a2} = ${(k + 1) * a2} Punkte`, `Im nächsten Test: ${(k + 1) * a2} − ${k * a1} = ${noetig} Punkte`]
       };
     }
@@ -570,13 +584,17 @@ const TEXTAUFGABEN = [
         const preis = summe / menge;
         return {
           frage: `Du mischst ${m1} kg Nüsse zu ${fe(p1)} pro kg mit ${m2} kg Nüssen zu ${fe(p2)} pro kg. Was kostet 1 kg der Mischung?`,
-          ...H.optionen(preis, [(p1 + p2) / 2, preis + 1, preis - 1, preis + 0.5, summe], fe, { ganz: false }),
+          ...H.optionen(preis, [[(p1 + p2) / 2, 'Du hast den Durchschnitt der Preise genommen. Die Mengen sind aber verschieden.'], preis + 1, preis - 1, preis + 0.5, [summe, 'Das ist der Preis für die ganze Mischung. Teile ihn noch durch die Menge.']], fe, { ganz: false }),
           erklaerung: [`Gesamtpreis: ${m1} × ${fe(p1)} + ${m2} × ${fe(p2)} = ${fe(summe)}`, `Gesamtmenge: ${m1} kg + ${m2} kg = ${menge} kg`, `Preis pro kg: ${fe(summe)} ÷ ${menge} = ${fe(preis)}`]
         };
       }
     }
   }
 ];
+
+function zeichenGrund(tokens, ziel) {
+  return `Mit diesen Zeichen rechnest du ${H.rechenweg(tokens)}. Gesucht ist aber ${fz(ziel)}.`;
+}
 
 function rechenzeichen(n) {
   const OPS = ['+', '−', '×', '÷'];
@@ -595,6 +613,7 @@ function rechenzeichen(n) {
         zeichen: { teile: [a, '?', b], ergebnis: c },
         antworten: OPS.slice(),
         richtig: OPS.indexOf(op),
+        gruende: Object.fromEntries(OPS.filter(o => o !== op).map(o => [o, zeichenGrund([a, o, b], c)])),
         reihenfolgeFest: true,
         erklaerung: [`${fz(a)} ${op} ${fz(b)} = ${fz(c)}`, 'Mit den anderen Zeichen kommt etwas anderes heraus.']
       };
@@ -619,6 +638,7 @@ function rechenzeichen(n) {
       zeichen: { teile: verflechte(zahlen, Array(anzahl).fill('?')), ergebnis: werte[ziel] },
       antworten: optionen.map(k => H.und(k)),
       richtig: optionen.indexOf(kombis[ziel]),
+      gruende: Object.fromEntries(andere.map(k => [H.und(k), zeichenGrund(verflechte(zahlen, k), werte[ziel])])),
       erklaerung: ['Es gilt Punkt vor Strich.', H.rechenweg(verflechte(zahlen, kombis[ziel]))]
     };
   }
@@ -647,7 +667,7 @@ function zyklusReihe(start, ops, laenge) {
   const naechste = ops[(laenge - 2) % ops.length];
   const l = letzte(folge, 2);
   const a = letzte(folge);
-  const andere = ops.filter(o => o !== naechste).map(o => OP[o[0]](l, o[1]));
+  const andere = ops.filter(o => o !== naechste).map(o => [OP[o[0]](l, o[1]), `Du hast ${opText(o)} gerechnet. Als Nächstes ist aber ${opText(naechste)} dran.`]);
   return {
     folge,
     falsch: andere.concat([a + 1, a - 1, a + 2, a - 2]),
@@ -669,7 +689,7 @@ function verschachtelt(r1, r2, laenge) {
   const antwort = letzte(eigene);
   return {
     folge,
-    falsch: [OP[fremdOp[0]](letzte(fremde), fremdOp[1]), antwort + 1, antwort - 1, OP[eigenOp[0]](antwort, eigenOp[1]), antwort + 2],
+    falsch: [[OP[fremdOp[0]](letzte(fremde), fremdOp[1]), `Das ist die nächste Zahl der anderen Reihe. Gesucht ist die nächste Zahl von Reihe ${erste ? 1 : 2}.`], antwort + 1, antwort - 1, [OP[eigenOp[0]](antwort, eigenOp[1]), 'Du bist in der Reihe einen Schritt zu weit gegangen.'], antwort + 2],
     erklaerung: [
       'Zwei Reihen wechseln sich ab.',
       `Reihe 1: ${a.slice(0, erste ? -1 : undefined).map(fz).join(', ')} (immer ${opText(r1[1])})`,
@@ -687,7 +707,7 @@ const REIHEN = [
       const folge = Array.from({ length: 7 }, (_, i) => s + schrittweite * i), a = letzte(folge);
       return {
         folge,
-        falsch: [a + schrittweite, a + 1, a - 1, a + 2, a - 2, a + 10],
+        falsch: [[a + schrittweite, 'Das ist die übernächste Zahl. Gesucht ist nur die nächste.'], a + 1, a - 1, a + 2, a - 2, a + 10],
         erklaerung: [`Jede Zahl ist um ${d} ${ab ? 'kleiner' : 'größer'} als die vorige.`, schritt(letzte(folge, 2), schrittweite)]
       };
     }
@@ -702,13 +722,13 @@ const REIHEN = [
       if (halb) {
         return {
           folge,
-          falsch: [l - (v - l), a + 1, a - 1, l - 2, a + 2],
+          falsch: [[l - (v - l), 'Du hast den letzten Abstand wiederholt. Hier wird aber jedes Mal halbiert.'], a + 1, a - 1, l - 2, a + 2],
           erklaerung: ['Jede Zahl ist halb so groß wie die vorige.', `${fz(l)} ÷ 2 = ${fz(a)}`]
         };
       }
       return {
         folge,
-        falsch: [l + (l - v), a + l, a - 1, a + 1, a + q, l * (q + 1)],
+        falsch: [[l + (l - v), `Du hast den letzten Abstand wiederholt. Hier wird aber jedes Mal mit ${q} malgenommen.`], [a + l, 'Du hast die letzten beiden Zahlen zusammengezählt. Das ist hier nicht die Regel.'], a - 1, a + 1, a + q, [l * (q + 1), `Du hast mit ${q + 1} malgenommen statt mit ${q}.`]],
         erklaerung: [`Jede Zahl wird mit ${q} malgenommen.`, `${fz(l)} × ${q} = ${fz(a)}`]
       };
     }
@@ -721,7 +741,7 @@ const REIHEN = [
       const dd = abstaende(folge), a = letzte(folge), l = letzte(folge, 2);
       return {
         folge,
-        falsch: [l + letzte(dd, 2), a + inc, a - inc, a + 1, a - 1],
+        falsch: [[l + letzte(dd, 2), GLEICHER], [a + inc, `Der Abstand ist zu groß. Er wächst jedes Mal nur um ${inc}.`], a - inc, a + 1, a - 1],
         erklaerung: [`Die Abstände wachsen jeweils um ${inc}: ${dd.slice(0, -1).map(mitVorzeichen).join(', ')}.`, `Nächster Abstand: ${mitVorzeichen(letzte(dd))}, also ${schritt(l, letzte(dd))}`]
       };
     }
@@ -763,7 +783,7 @@ const REIHEN = [
       const dd = abstaende(folge), a = letzte(folge), l = letzte(folge, 2);
       return {
         folge,
-        falsch: [l + letzte(dd, 2), l * q, a + 1, a - 1, l + 2 * letzte(dd, 2) + 1],
+        falsch: [[l + letzte(dd, 2), GLEICHER], [l * q, `Du hast die letzte Zahl mit ${q} malgenommen. ${q === 2 ? 'Verdoppelt' : 'Verdreifacht'} werden aber die Abstände.`], a + 1, a - 1, l + 2 * letzte(dd, 2) + 1],
         erklaerung: [`Die Abstände werden jedes Mal ${q === 2 ? 'verdoppelt' : 'verdreifacht'}: ${dd.slice(0, -1).map(mitVorzeichen).join(', ')}.`, `Nächster Abstand: ${mitVorzeichen(letzte(dd))}, also ${schritt(l, letzte(dd))}`]
       };
     }
@@ -776,7 +796,7 @@ const REIHEN = [
       const zusatz = c === 0 ? '' : ` ${c > 0 ? '+' : '−'} ${Math.abs(c)}`;
       return {
         folge,
-        falsch: [l + letzte(dd, 2), a + 1, a - 1, (m + 1) * (m + 1) + c, a + 2],
+        falsch: [[l + letzte(dd, 2), GLEICHER], a + 1, a - 1, [(m + 1) * (m + 1) + c, 'Du hast eine Quadratzahl übersprungen.'], a + 2],
         erklaerung: [
           c === 0 ? 'Das sind Quadratzahlen.' : `Das sind Quadratzahlen ${c > 0 ? 'plus' : 'minus'} ${Math.abs(c)}.`,
           `${k}²${zusatz} = ${fz(folge[0])}, ${k + 1}²${zusatz} = ${fz(folge[1])} und so weiter.`,
@@ -797,7 +817,7 @@ const REIHEN = [
       const i = H.zufall(0, 8), folge = P.slice(i, i + 7), a = letzte(folge), l = letzte(folge, 2), dd = abstaende(folge);
       return {
         folge,
-        falsch: [l + 2, l + letzte(dd, 2), a + 2, a + 1, a - 1],
+        falsch: [l + 2, l + letzte(dd, 2), a + 2, a + 1, a - 1].map(x => [x, P.includes(x) ? `${x} ist zwar eine Primzahl, aber nicht die nächste nach ${l}.` : `${x} ist keine Primzahl, denn es lässt sich durch ${[2, 3, 5, 7].find(t => x % t === 0)} teilen.`]),
         erklaerung: ['Das sind Primzahlen. Sie lassen sich nur durch 1 und durch sich selbst teilen.', `Nach ${l} kommt die Primzahl ${a}.`]
       };
     }
@@ -809,7 +829,7 @@ const REIHEN = [
       const a = letzte(folge), l = letzte(folge, 2), v = letzte(folge, 3);
       return {
         folge,
-        falsch: [l + (l - v), l * 2, a + 1, a - 1, a + v],
+        falsch: [[l + (l - v), 'Du hast den letzten Abstand wiederholt. Hier ist aber jede Zahl die Summe der beiden Zahlen davor.'], [l * 2, `Du hast ${fz(l)} verdoppelt. Zähle stattdessen die beiden letzten Zahlen zusammen.`], a + 1, a - 1, a + v],
         erklaerung: ['Jede Zahl ist die Summe der beiden Zahlen davor.', `${fz(v)} + ${fz(l)} = ${fz(a)}`]
       };
     }
@@ -824,7 +844,7 @@ const REIHEN = [
         const a = letzte(folge), l = letzte(folge, 2), v = letzte(folge, 3);
         return {
           folge,
-          falsch: [l * q, l * q + 2 * r, l + (l - v), a + 1, a - 1],
+          falsch: [[l * q, `Du hast nur mit ${q} malgenommen. Danach ${r > 0 ? `kommt noch ${r} dazu` : `wird noch ${-r} abgezogen`}.`], [l * q + 2 * r, `Du hast ${Math.abs(r)} doppelt ${r > 0 ? 'dazugezählt' : 'abgezogen'}.`], [l + (l - v), GLEICHER], a + 1, a - 1],
           erklaerung: [`Jede Zahl wird mit ${q} malgenommen, dann ${r > 0 ? `kommt ${r} dazu` : `wird ${-r} abgezogen`}.`, `${fz(l)} × ${q} ${r > 0 ? '+' : '−'} ${Math.abs(r)} = ${fz(a)}`]
         };
       }
@@ -837,7 +857,7 @@ const REIHEN = [
       const a = letzte(folge), l = letzte(folge, 2);
       return {
         folge,
-        falsch: [l * 5, l * 7, a + l, a - l, a / 2],
+        falsch: [[l * 5, 'Du hast den letzten Faktor wiederholt. Der Faktor wächst aber jedes Mal um 1.'], [l * 7, 'Du hast einen Faktor übersprungen. Als Nächstes kommt ×6.'], a + l, a - l, a / 2],
         erklaerung: ['Der Faktor wächst jedes Mal um 1: ×2, ×3, ×4, ×5.', `Als Nächstes kommt ×6: ${fz(l)} × 6 = ${fz(a)}`]
       };
     }
@@ -849,7 +869,7 @@ const REIHEN = [
       const dd = abstaende(folge), a = letzte(folge), l = letzte(folge, 2);
       return {
         folge,
-        falsch: [l + letzte(dd, 2), l + 2 * letzte(dd, 2) - letzte(dd, 3), a + 1, a - 1, a + 2],
+        falsch: [[l + letzte(dd, 2), GLEICHER], [l + 2 * letzte(dd, 2) - letzte(dd, 3), 'Du hast angenommen, dass die Abstände gleichmäßig wachsen. Die Abstände sind aber Quadratzahlen.'], a + 1, a - 1, a + 2],
         erklaerung: [`Die Abstände sind Quadratzahlen: ${dd.slice(0, -1).map(mitVorzeichen).join(', ')}.`, `Nächster Abstand: ${mitVorzeichen(letzte(dd))} (${k + 5}²), also ${schritt(l, letzte(dd))}`]
       };
     }
@@ -860,7 +880,7 @@ const REIHEN = [
       const dd = abstaende(folge), a = letzte(folge), l = letzte(folge, 2);
       return {
         folge,
-        falsch: [l + letzte(dd, 2), m * m, a + 1, a - m, a + m],
+        falsch: [[l + letzte(dd, 2), GLEICHER], [m * m, `Das ist ${m}². Gesucht ist ${m}³.`], a + 1, a - m, a + m],
         erklaerung: ['Das sind Kubikzahlen, also Zahlen hoch 3.', `${k}³ = ${fz(folge[0])}, ${k + 1}³ = ${fz(folge[1])} und so weiter.`, `Als Nächstes: ${m}³ = ${fz(a)}`]
       };
     }
@@ -882,7 +902,7 @@ function zahlenreihe(n) {
     return {
       frage: 'Welche Zahl kommt als Nächstes?',
       reihe: gezeigt,
-      ...H.optionen(letzte(r.folge), r.falsch, null, { positiv: gezeigt.every(x => x >= 0) }),
+      ...H.optionen(letzte(r.folge), r.falsch, null, { positiv: gezeigt.every(x => x >= 0), auto: x => `Diese Zahl ist um ${fz(Math.abs(x - letzte(r.folge)))} zu ${x > letzte(r.folge) ? 'groß' : 'klein'}. Wende die Regel noch einmal genau an.` }),
       erklaerung: r.erklaerung
     };
   }

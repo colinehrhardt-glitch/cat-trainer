@@ -41,14 +41,36 @@ function neuGemischt(a) {
   return kopie;
 }
 
+function grundFuer(a, wahl) {
+  if (wahl === null || wahl === undefined) return 'Die Zeit ist abgelaufen. Im Test zählt eine Aufgabe ohne Antwort als falsch.';
+  const t = a.antworten[wahl];
+  return (a.gruende && a.gruende[t]) || (TYPEN[a.typ] && TYPEN[a.typ].fehler) || 'Diese Antwort passt nicht. Vergleiche sie mit dem Lösungsweg.';
+}
+
+function antwortZeile(a, i, klasse, titel) {
+  const leer = i === null || i === undefined;
+  const inhalt = leer ? '<span class="vergleich-text">keine Antwort</span>' : a.svg ? `<span class="vergleich-bild">${a.antworten[i]}</span>` : `<span class="vergleich-text">${esc(a.antworten[i])}</span>`;
+  return `<div class="vergleich-zeile ${klasse}"><div class="vergleich-kopf">${leer ? '' : `<span class="buchstabe">${BUCHSTABEN[i]}</span>`}<span class="label">${titel}</span><span class="vergleich-zeichen">${klasse === 'richtig' ? '✓' : '✗'}</span></div>${inhalt}</div>`;
+}
+
+function wegHtml(a) {
+  const weg = a.erklaerung && a.erklaerung.length ? `<div class="label">So löst du die Aufgabe</div><ol class="weg">${a.erklaerung.map(z => `<li>${esc(z)}</li>`).join('')}</ol>` : '';
+  const bild = a.loesungsbild ? `<div class="bild loesungsbild">${a.loesungsbild}</div>` : '';
+  const v = TYPEN[a.typ] && TYPEN[a.typ].vorgehen;
+  const vorgehen = v ? `<div class="vorgehen"><div class="label">So gehst du bei diesem Aufgabentyp vor</div><ol>${v.map(z => `<li>${esc(z)}</li>`).join('')}</ol></div>` : '';
+  return weg + bild + vorgehen;
+}
+
+function loesungHtml(a, wahl) {
+  if (wahl === a.richtig) return wegHtml(a);
+  return `<div class="vergleich">${antwortZeile(a, wahl, 'falsch', 'Deine Antwort')}${antwortZeile(a, a.richtig, 'richtig', 'Richtige Antwort')}</div>
+    <div class="warum"><div class="label">Warum deine Antwort falsch ist</div><p>${esc(grundFuer(a, wahl))}</p></div>${wegHtml(a)}`;
+}
+
 function rueckmeldungHtml(a, wahl, knopf) {
   const ok = wahl === a.richtig;
-  const titel = ok ? 'Richtig' : `Falsch. Richtig ist ${BUCHSTABEN[a.richtig]}${a.svg ? '' : ': ' + a.antworten[a.richtig]}`;
-  const weg = a.erklaerung && a.erklaerung.length
-    ? `<div class="label">Lösungsweg</div><ol class="weg">${a.erklaerung.map(z => `<li>${esc(z)}</li>`).join('')}</ol>`
-    : '';
-  const bild = a.loesungsbild ? `<div class="bild loesungsbild">${a.loesungsbild}</div>` : '';
-  return `<section class="rueckmeldung ${ok ? 'gut' : 'schlecht'}" id="rueckmeldung" tabindex="-1" aria-live="polite"><div class="rueck-titel">${esc(titel)}</div>${weg}${bild}${knopf || ''}</section>`;
+  const inhalt = ok ? `<details class="mehr"><summary>Lösungsweg und Vorgehen anzeigen</summary><div class="mehr-inhalt">${wegHtml(a)}</div></details>` : loesungHtml(a, wahl);
+  return `<section class="rueckmeldung ${ok ? 'gut' : 'schlecht'}" id="rueckmeldung" tabindex="-1" aria-live="polite"><div class="rueck-titel">${ok ? 'Richtig ✓' : 'Leider falsch'}</div>${inhalt}${knopf || ''}</section>`;
 }
 
 function aufgabenSchluessel(a) {
@@ -223,14 +245,10 @@ Object.assign(ANSICHTEN, {
     const fehler = l.filter(x => !x.richtig).map(x => {
       const a = x.aufgabe;
       const titel = a.term || a.text || (a.reihe ? a.reihe.map(z => H.zahl(z)).join(', ') + ', ?' : a.zeichen ? a.zeichen.teile.map(z => (z === '?' ? '?' : H.zahl(z))).join(' ') + ' = ' + H.zahl(a.zeichen.ergebnis) : a.frage);
-      const antworten = a.svg
-        ? `<div class="fehler-bilder"><div><div class="label">Deine Antwort</div>${a.antworten[x.gewaehlt]}</div><div><div class="label">Richtig</div>${a.antworten[a.richtig]}</div></div>`
-        : `<p>Deine Antwort: ${esc(a.antworten[x.gewaehlt])}<br>Richtig: <strong>${esc(a.antworten[a.richtig])}</strong></p>`;
       return `<details class="fehler"><summary>${esc(titel)}</summary><div class="fehler-inhalt">
         ${a.term || a.reihe || a.zeichen || a.text ? `<p>${esc(a.frage)}</p>` : ''}
         ${a.bild ? `<div class="bild">${a.bild}</div>` : ''}
-        ${antworten}
-        <ol class="weg">${a.erklaerung.map(z => `<li>${esc(z)}</li>`).join('')}</ol>
+        ${loesungHtml(a, x.gewaehlt)}
       </div></details>`;
     }).join('');
     return kopf('Auswertung') + `<main class="seite">

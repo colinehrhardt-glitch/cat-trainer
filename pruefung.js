@@ -313,15 +313,11 @@ Object.assign(ANSICHTEN, {
       const zeilen = l.map(x => {
         const a = x.aufgabe;
         const titel = a.term || a.text || (a.reihe ? a.reihe.map(z => H.zahl(z)).join(', ') + ', ?' : a.zeichen ? a.zeichen.teile.map(z => (z === '?' ? '?' : H.zahl(z))).join(' ') + ' = ' + H.zahl(a.zeichen.ergebnis) : a.frage);
-        const deine = x.gewaehlt === null ? 'keine (Zeit abgelaufen)' : a.svg ? BUCHSTABEN[x.gewaehlt] : a.antworten[x.gewaehlt];
-        const richtigText = a.svg ? BUCHSTABEN[a.richtig] : a.antworten[a.richtig];
         return `<details class="fehler"><summary><span class="${x.richtig ? 'ok-zeichen' : 'nok-zeichen'}">${x.richtig ? '✓' : '✗'}</span> ${esc(titel)}</summary><div class="fehler-inhalt">
           ${a.term || a.reihe || a.zeichen || a.text ? `<p>${esc(a.frage)}</p>` : ''}
           ${a.bild ? `<div class="bild">${a.bild}</div>` : ''}
-          ${a.svg ? `<div class="fehler-bilder">${x.gewaehlt !== null ? `<div><div class="label">Deine Antwort</div>${a.antworten[x.gewaehlt]}</div>` : ''}<div><div class="label">Richtig</div>${a.antworten[a.richtig]}</div></div>` : ''}
-          <p>Deine Antwort: ${esc(deine)}<br>Richtig: <strong>${esc(richtigText)}</strong></p>
-          <ol class="weg">${a.erklaerung.map(z => `<li>${esc(z)}</li>`).join('')}</ol>
-          ${a.loesungsbild ? `<div class="bild">${a.loesungsbild}</div>` : ''}
+          ${x.richtig ? '<p class="status gut">Richtig beantwortet</p>' : ''}
+          ${loesungHtml(a, x.gewaehlt)}
         </div></details>`;
       }).join('');
       return `<details class="bereich-nachlesen"><summary>${esc(b.name)} · ${l.filter(x => x.richtig).length} von ${l.length}</summary><div class="fehlerliste">${zeilen}</div></details>`;

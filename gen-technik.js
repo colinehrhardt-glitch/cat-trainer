@@ -128,6 +128,19 @@ function zahnradRichtung(n) {
   const loesung = d ? (d[ziel] * start > 0 ? 0 : 1) : 3;
   if (d) weg = richtungsWeg(raeder, d, start, weg);
   bild += drehpfeil(raeder[0], start > 0);
+  const gruende = {};
+  const richtungGrund = {
+    reihe: `Die Richtung wechselt bei jedem Zahnrad. Bei ${raeder.length} Rädern wechselt sie ${raeder.length === 2 ? 'einmal' : `${raeder.length - 1}-mal`}.`,
+    riemen: kanten[0][2] === 'gegen' ? 'Ein gekreuzter Riemen kehrt die Drehrichtung um.' : 'Ein gerader Riemen behält die Drehrichtung bei.',
+    kombi: 'Zähle die Wechsel bei den Zahnrädern. Die Riemenscheibe dreht sich wie ihr Zahnrad, dann entscheidet der Riemen.',
+    block: 'Drei Zahnräder greifen im Kreis ineinander. Dann kann sich keines drehen.'
+  }[art];
+  RICHTUNGEN.forEach((t, i) => {
+    if (i === loesung) return;
+    if (i === 2) gruende[t] = 'Ein Zahnrad dreht sich nicht hin und her, solange Rad A in eine Richtung läuft.';
+    else if (i === 3) gruende[t] = 'Die Räder blockieren nur, wenn drei Zahnräder im Kreis ineinandergreifen. Das ist hier nicht so.';
+    else gruende[t] = richtungGrund;
+  });
   const hoehe = Math.max(...raeder.map(z => z.y + z.r)) + 14;
   const oben = Math.min(0, Math.min(...raeder.map(z => z.y - z.r)) - 18);
   return {
@@ -135,6 +148,7 @@ function zahnradRichtung(n) {
     bild: `<div class="bild-mitte">${S.svg(breite, hoehe - oben, `<g transform="translate(0 ${-oben})">${bild}</g>`, 'technik')}</div>`,
     antworten: RICHTUNGEN.slice(),
     richtig: loesung,
+    gruende,
     reihenfolgeFest: true,
     erklaerung: weg
   };
@@ -159,7 +173,7 @@ function zahnradTempo(n) {
       return {
         frage: `Zahnrad A dreht sich ${na}-mal pro Minute. Die Zahnräder B und C sitzen fest auf derselben Achse. Wie oft dreht sich D pro Minute?`,
         bild: `<div class="bild-mitte">${S.svg(breite, hoehe + 10, `<g transform="translate(0 20)">${bild}</g>`, 'technik')}</div>`,
-        ...H.optionen(nd, [nb, na * za / zd, nd * 2, nd / 2, nd + 5], x => fz(x) + '-mal'),
+        ...H.optionen(nd, [[nb, 'Das ist das Tempo von B und C. D dreht sich wieder anders.'], [na * za / zd, 'Du hast direkt von A auf D gerechnet. Rechne Schritt für Schritt über B und C.'], nd * 2, nd / 2, nd + 5], x => fz(x) + '-mal', { ohneBetrag: true }),
         erklaerung: ['Zähne × Umdrehungen ist bei zwei Zahnrädern gleich.', `A → B: ${na} × ${za} ÷ ${zb} = ${fz(nb)}-mal pro Minute`, `C dreht sich wie B: ${fz(nb)}-mal`, `C → D: ${fz(nb)} × ${zc} ÷ ${zd} = ${fz(nd)}-mal pro Minute`]
       };
     }
@@ -184,7 +198,7 @@ function zahnradTempo(n) {
     return {
       frage: `Zahnrad A dreht sich ${na}-mal pro Minute. Wie oft dreht sich Zahnrad ${ziel.name} pro Minute?`,
       bild: `<div class="bild-mitte">${S.svg(breite, hoehe + Math.max(0, top), `<g transform="translate(0 ${Math.max(0, top)})">${raeder.map(zahnradSvg).join('')}</g>`, 'technik')}</div>`,
-      ...H.optionen(nc, [na * zc / za, na, nc * 2, nc + 10, mitte ? na * za / zb : nc - 5], x => fz(x) + '-mal'),
+      ...H.optionen(nc, [[na * zc / za, 'Du hast das Verhältnis umgedreht. Das Rad mit weniger Zähnen dreht sich schneller.'], [na, 'Das ist das Tempo von A. Bei unterschiedlich vielen Zähnen ändert sich das Tempo.'], nc * 2, nc + 10, mitte ? [na * za / zb, 'Das ist das Tempo des mittleren Rads B. Gefragt ist das letzte Rad.'] : nc - 5], x => fz(x) + '-mal', { ohneBetrag: true }),
       erklaerung: weg
     };
   }
@@ -232,7 +246,7 @@ function hebel(n) {
       return {
         frage: 'Wie schwer muss das Gewicht rechts sein, damit die Wippe im Gleichgewicht ist?',
         bild: wippeSvg(links.map(g => ({ d: g.d, text: g.m + ' kg' })), [{ d: d2, text: '?' }]),
-        ...H.optionen(m2, [links.reduce((s, g) => s + g.m, 0), moment, m2 + 1, m2 * 2, m2 - 1].filter(x => x !== m2), x => H.einheit(x, 'kg')),
+        ...H.optionen(m2, [[links.reduce((s, g) => s + g.m, 0), 'Du hast nur die Gewichte verglichen. Der Abstand zählt aber mit: Gewicht × Abstand.'], [moment, `Das ist Gewicht × Abstand der linken Seite. Teile noch durch den Abstand ${d2}.`], m2 + 1, m2 * 2, m2 - 1], x => H.einheit(x, 'kg')),
         erklaerung: ['Hebelgesetz: Gewicht × Abstand ist links und rechts gleich.', `Links: ${linksText} = ${moment}`, `Rechts: ? × ${d2} = ${moment}, also ${moment} ÷ ${d2} = ${m2} kg`]
       };
     }
@@ -243,7 +257,7 @@ function hebel(n) {
       return {
         frage: `An welche Position rechts muss das ${m2}-kg-Gewicht, damit die Wippe im Gleichgewicht ist?`,
         bild: wippeSvg([{ d: d1, text: m1 + ' kg' }], []),
-        ...H.optionen(d2, [d1, 6 - d2, d2 + 1, d2 - 1].filter(x => x >= 1 && x <= 5 && x !== d2), x => 'Position ' + x),
+        ...H.optionen(d2, [d1, 6 - d2, d2 + 1, d2 - 1].filter(x => x >= 1 && x <= 5 && x !== d2).map(x => [x, `An Position ${x} wäre rechts ${m2} kg × ${x} = ${m2 * x}. Links sind es aber ${m1 * d1}.`]), x => 'Position ' + x),
         erklaerung: ['Hebelgesetz: Gewicht × Abstand ist links und rechts gleich.', `Links: ${m1} kg × ${d1} = ${m1 * d1}`, `Rechts: ${m2} kg × ? = ${m1 * d1}, also ${m1 * d1} ÷ ${m2} = ${d2}`]
       };
     }
@@ -263,11 +277,20 @@ function hebel(n) {
       const ml = links.reduce((s, g) => s + g.m * g.d, 0), mr = rechts.reduce((s, g) => s + g.m * g.d, 0);
       const loesung = ml > mr ? 0 : mr > ml ? 1 : 2;
       const t = l => l.map(g => `${g.m} × ${g.d}`).join(' + ');
+      const wl = links.reduce((s, g) => s + g.m, 0), wr = rechts.reduce((s, g) => s + g.m, 0);
+      const nurGewicht = wl > wr ? 0 : wr > wl ? 1 : 2;
+      const seiten = ['Die linke Seite', 'Die rechte Seite', 'Keine, sie bleibt im Gleichgewicht', 'Das hängt von der Länge der Wippe ab'];
+      const gruende = {};
+      seiten.forEach((s, i) => {
+        if (i === loesung) return;
+        gruende[s] = i === 3 ? 'Die Länge der Wippe spielt keine Rolle. Es zählt nur Gewicht × Abstand auf beiden Seiten.' : `Rechne Gewicht × Abstand: Links sind es ${ml}, rechts ${mr}.` + (i === nurGewicht ? ' Nur die Gewichte zu vergleichen reicht nicht, der Abstand zählt mit.' : '');
+      });
       return {
         frage: 'Welche Seite der Wippe senkt sich?',
         bild: wippeSvg(links.map(g => ({ d: g.d, text: g.m + ' kg' })), rechts.map(g => ({ d: g.d, text: g.m + ' kg' }))),
-        antworten: ['Die linke Seite', 'Die rechte Seite', 'Keine, sie bleibt im Gleichgewicht', 'Das hängt von der Länge der Wippe ab'],
+        antworten: seiten,
         richtig: loesung,
+        gruende,
         reihenfolgeFest: true,
         erklaerung: ['Rechne für jede Seite Gewicht × Abstand und addiere.', `Links: ${t(links)} = ${ml}`, `Rechts: ${t(rechts)} = ${mr}`, loesung === 2 ? 'Beide Seiten sind gleich, also Gleichgewicht.' : `Die ${loesung === 0 ? 'linke' : 'rechte'} Seite ist größer und senkt sich.`]
       };
@@ -278,7 +301,7 @@ function hebel(n) {
     return {
       frage: `Eine Last von ${last} N liegt links an Position ${d1}. Mit welcher Kraft F musst du rechts an Position ${d2} drücken, um sie im Gleichgewicht zu halten?`,
       bild: wippeSvg([{ d: d1, text: last + ' N' }], [], { d: d2 }),
-      ...H.optionen(f, [last, last * d2 / d1, f * 2, f + 50, last - f], x => H.einheit(x, 'N')),
+      ...H.optionen(f, [[last, 'Das ist die volle Last. Mit dem längeren Hebelarm brauchst du weniger Kraft.'], [last * d2 / d1, 'Du hast die Abstände vertauscht. Je länger der Kraftarm, desto weniger Kraft brauchst du.'], f * 2, f + 50, [last - f, 'Du hast die Kraft von der Last abgezogen. Rechne mit dem Hebelgesetz.']], x => H.einheit(x, 'N')),
       erklaerung: ['Hebelgesetz: Kraft × Kraftarm = Last × Lastarm.', `${last} N × ${d1} = ${last * d1}`, `F × ${d2} = ${last * d1}, also F = ${last * d1} ÷ ${d2} = ${fz(f)} N`, 'Je länger der Kraftarm, desto weniger Kraft brauchst du.']
     };
   }
@@ -316,12 +339,14 @@ function flaschenzuege(n) {
     const last = kg ? H.wahl([30, 40, 60, 90, 120, 150, 180]) * 10 : H.wahl([120, 240, 300, 360, 480, 600, 720, 900, 1200]);
     const lastText = kg ? `${last / 10} kg` : `${last} N`;
     const seil = n === 3 || (n >= 4 && Math.random() < 0.4);
+    const seile = k => (k === 1 ? '1 Seilstück' : `${k} Seilstücke`);
+    const gezaehlt = k => `Du hast ${seile(k)} gezählt. Die Last hängt aber an ${s === 1 ? 'einem Seilstück' : `${s} Seilstücken`}.`;
     if (seil) {
       const hub = H.wahl([1, 1.5, 2, 3, 4]);
       return {
         frage: `Die Last soll ${fz(hub)} m angehoben werden. Wie viel Seil musst du am Ende F ziehen?`,
         bild: flaschenzugSvg(s, lastText),
-        ...H.optionen(hub * s, [hub, hub * (s + 1), hub * (s - 1), hub * s / 2, hub * 2], x => H.einheit(x, 'm'), { ganz: false }),
+        ...H.optionen(hub * s, [hub, hub * (s + 1), hub * (s - 1), hub * s / 2, hub * 2].map(x => [x, x === hub ? 'Das ist nur die Hubhöhe. Jedes tragende Seilstück wird kürzer, deshalb ziehst du mehr Seil.' : Number.isInteger(H.runde(x / hub, 6)) ? gezaehlt(H.runde(x / hub, 6)) : '']), x => H.einheit(x, 'm'), { ganz: false }),
         erklaerung: [`Die Last hängt an ${s} Seilstücken.`, `Jedes Seilstück muss um ${fz(hub)} m kürzer werden.`, `${s} × ${fz(hub)} m = ${fz(hub * s)} m Seil`]
       };
     }
@@ -334,7 +359,7 @@ function flaschenzuege(n) {
     return {
       frage: `Mit welcher Kraft F musst du ziehen, um die Last zu halten? Reibung und Gewicht der Rollen zählen nicht.${kg ? ' Rechne mit 1 kg ≈ 10 N.' : ''}`,
       bild: flaschenzugSvg(s, lastText),
-      ...H.optionen(f, [last, last / (s + 1), last / (s - 1 || 2), f * 2, last / 2], x => H.einheit(x, 'N')),
+      ...H.optionen(f, [1, s + 1, s - 1 || 2, s / 2, 2].map(k => [last / k, s === 1 ? 'Eine feste Rolle spart keine Kraft. Sie lenkt die Kraft nur um.' : k === 1 ? 'Das ist die volle Last. Die Seilstücke teilen sich die Last.' : Number.isInteger(k) ? gezaehlt(k) : '']), x => H.einheit(x, 'N')),
       erklaerung: weg
     };
   }
@@ -344,47 +369,47 @@ const PHYSIK = {
   1: [
     () => {
       const r = H.wahl([10, 20, 50, 100]), i = H.wahl([1, 2, 3, 5]), u = r * i;
-      return { frage: `Durch einen Widerstand von ${r} Ω fließt ein Strom von ${i} A. Wie hoch ist die Spannung?`, ...H.optionen(u, [r + i, r / i, u * 2, u / 2], x => H.einheit(x, 'V'), { ganz: false }), erklaerung: ['Spannung = Widerstand × Stromstärke (U = R × I)', `${r} Ω × ${i} A = ${u} V`] };
+      return { frage: `Durch einen Widerstand von ${r} Ω fließt ein Strom von ${i} A. Wie hoch ist die Spannung?`, ...H.optionen(u, [[r + i, 'Du hast addiert. Richtig ist U = R × I.'], [r / i, 'Du hast geteilt. Richtig ist U = R × I.'], u * 2, u / 2], x => H.einheit(x, 'V'), { ganz: false }), erklaerung: ['Spannung = Widerstand × Stromstärke (U = R × I)', `${r} Ω × ${i} A = ${u} V`] };
     }
   ],
   2: [
     () => {
       const r = H.wahl([10, 20, 40, 50, 100, 200]), i = H.wahl([0.1, 0.2, 0.5, 1, 2]), u = H.runde(r * i, 2);
-      if (Math.random() < 0.5) return { frage: `An einem Widerstand von ${r} Ω liegen ${fz(u)} V. Wie groß ist die Stromstärke?`, ...H.optionen(i, [u * r, r / u, i * 10, i * 2, i / 2], x => H.einheit(x, 'A'), { ganz: false }), erklaerung: ['Stromstärke = Spannung ÷ Widerstand (I = U ÷ R)', `${fz(u)} V ÷ ${r} Ω = ${fz(i)} A`] };
-      return { frage: `Bei ${fz(u)} V fließt ein Strom von ${fz(i)} A. Wie groß ist der Widerstand?`, ...H.optionen(r, [u * i, i / u, r * 2, r / 2, r + 10], x => H.einheit(x, 'Ω'), { ganz: false }), erklaerung: ['Widerstand = Spannung ÷ Stromstärke (R = U ÷ I)', `${fz(u)} V ÷ ${fz(i)} A = ${r} Ω`] };
+      if (Math.random() < 0.5) return { frage: `An einem Widerstand von ${r} Ω liegen ${fz(u)} V. Wie groß ist die Stromstärke?`, ...H.optionen(i, [[u * r, 'Du hast malgenommen. Richtig ist I = U ÷ R.'], [r / u, 'Du hast andersherum geteilt. Richtig ist I = U ÷ R.'], i * 10, i * 2, i / 2], x => H.einheit(x, 'A'), { ganz: false }), erklaerung: ['Stromstärke = Spannung ÷ Widerstand (I = U ÷ R)', `${fz(u)} V ÷ ${r} Ω = ${fz(i)} A`] };
+      return { frage: `Bei ${fz(u)} V fließt ein Strom von ${fz(i)} A. Wie groß ist der Widerstand?`, ...H.optionen(r, [[u * i, 'Du hast malgenommen. Richtig ist R = U ÷ I.'], [i / u, 'Du hast andersherum geteilt. Richtig ist R = U ÷ I.'], r * 2, r / 2, r + 10], x => H.einheit(x, 'Ω'), { ganz: false }), erklaerung: ['Widerstand = Spannung ÷ Stromstärke (R = U ÷ I)', `${fz(u)} V ÷ ${fz(i)} A = ${r} Ω`] };
     }
   ],
   3: [
     () => {
       const i = H.wahl([0.5, 1, 2, 4, 5, 10]), p = 230 * i;
-      return { frage: `Ein Gerät an 230 V nimmt ${fz(i)} A auf. Wie groß ist seine Leistung?`, ...H.optionen(p, [230 / i, 230 + i, p * 2, p / 2], x => H.einheit(x, 'W'), { ganz: false }), erklaerung: ['Leistung = Spannung × Stromstärke (P = U × I)', `230 V × ${fz(i)} A = ${fz(p)} W`] };
+      return { frage: `Ein Gerät an 230 V nimmt ${fz(i)} A auf. Wie groß ist seine Leistung?`, ...H.optionen(p, [[230 / i, 'Du hast geteilt. Richtig ist P = U × I.'], [230 + i, 'Du hast addiert. Richtig ist P = U × I.'], p * 2, p / 2], x => H.einheit(x, 'W'), { ganz: false }), erklaerung: ['Leistung = Spannung × Stromstärke (P = U × I)', `230 V × ${fz(i)} A = ${fz(p)} W`] };
     },
     () => {
       const a = H.wahl([10, 20, 30, 47, 50, 100]), b = H.wahl([10, 20, 33, 40, 60, 100]);
-      return { frage: `Zwei Widerstände mit ${a} Ω und ${b} Ω sind in Reihe geschaltet. Wie groß ist der Gesamtwiderstand?`, ...H.optionen(a + b, [Math.abs(a - b), a * b, (a + b) / 2, a + b + 10], x => H.einheit(x, 'Ω'), { ganz: false }), erklaerung: ['In Reihe werden Widerstände addiert.', `${a} Ω + ${b} Ω = ${a + b} Ω`] };
+      return { frage: `Zwei Widerstände mit ${a} Ω und ${b} Ω sind in Reihe geschaltet. Wie groß ist der Gesamtwiderstand?`, ...H.optionen(a + b, [[Math.abs(a - b), 'Du hast abgezogen. In Reihe werden Widerstände addiert.'], [a * b, 'Du hast malgenommen. In Reihe werden Widerstände addiert.'], [(a + b) / 2, 'Du hast den Durchschnitt genommen. In Reihe werden Widerstände addiert.'], a + b + 10], x => H.einheit(x, 'Ω'), { ganz: false }), erklaerung: ['In Reihe werden Widerstände addiert.', `${a} Ω + ${b} Ω = ${a + b} Ω`] };
     }
   ],
   4: [
     () => {
       const [a, b] = H.wahl([[6, 3], [12, 4], [10, 15], [6, 12], [20, 30], [4, 12], [24, 8], [10, 40], [5, 20], [60, 30]]);
       const g = a * b / (a + b);
-      return { frage: `Zwei Widerstände mit ${a} Ω und ${b} Ω sind parallel geschaltet. Wie groß ist der Gesamtwiderstand?`, ...H.optionen(g, [a + b, (a + b) / 2, Math.abs(a - b), Math.min(a, b)], x => H.einheit(x, 'Ω'), { ganz: false }), erklaerung: ['Parallel gilt: Gesamtwiderstand = (R1 × R2) ÷ (R1 + R2)', `(${a} × ${b}) ÷ (${a} + ${b}) = ${a * b} ÷ ${a + b} = ${fz(g)} Ω`, 'Der Gesamtwiderstand ist immer kleiner als der kleinste Einzelwiderstand.'] };
+      return { frage: `Zwei Widerstände mit ${a} Ω und ${b} Ω sind parallel geschaltet. Wie groß ist der Gesamtwiderstand?`, ...H.optionen(g, [[a + b, 'So rechnest du bei einer Reihenschaltung. Parallel wird der Gesamtwiderstand kleiner.'], [(a + b) / 2, 'Der Durchschnitt passt nicht. Parallel ist der Gesamtwiderstand kleiner als der kleinste Einzelwiderstand.'], [Math.abs(a - b), 'Abziehen passt nicht. Rechne (R1 × R2) ÷ (R1 + R2).'], [Math.min(a, b), 'Der Gesamtwiderstand ist sogar kleiner als der kleinste Einzelwiderstand.']], x => H.einheit(x, 'Ω'), { ganz: false }), erklaerung: ['Parallel gilt: Gesamtwiderstand = (R1 × R2) ÷ (R1 + R2)', `(${a} × ${b}) ÷ (${a} + ${b}) = ${a * b} ÷ ${a + b} = ${fz(g)} Ω`, 'Der Gesamtwiderstand ist immer kleiner als der kleinste Einzelwiderstand.'] };
     },
     () => {
       let p, h, ct;
       do { p = H.wahl([0.5, 1, 1.5, 2, 2.5, 3]); h = H.wahl([2, 3, 4, 5, 6, 8, 10]); ct = H.wahl([25, 30, 35, 40]); } while (!Number.isInteger(p * h * ct));
       const kwh = p * h, kosten = kwh * ct / 100;
-      return { frage: `Ein Heizlüfter mit ${fz(p)} kW läuft ${h} Stunden. Eine Kilowattstunde kostet ${ct} Cent. Was kostet das?`, ...H.optionen(kosten, [p * ct / 100, kwh * ct, kosten * 2, kosten + 1], fe, { ganz: false }), erklaerung: ['Energie = Leistung × Zeit', `${fz(p)} kW × ${h} h = ${fz(kwh)} kWh`, `${fz(kwh)} × ${ct} ct = ${fe(kosten)}`] };
+      return { frage: `Ein Heizlüfter mit ${fz(p)} kW läuft ${h} Stunden. Eine Kilowattstunde kostet ${ct} Cent. Was kostet das?`, ...H.optionen(kosten, [[p * ct / 100, `Du hast die ${h} Stunden vergessen. Energie = Leistung × Zeit.`], [kwh * ct, 'Du hast vergessen, Cent in Euro umzurechnen. 100 Cent sind 1 €.'], kosten * 2, kosten + 1], fe, { ganz: false }), erklaerung: ['Energie = Leistung × Zeit', `${fz(p)} kW × ${h} h = ${fz(kwh)} kWh`, `${fz(kwh)} × ${ct} ct = ${fe(kosten)}`] };
     }
   ],
   5: [
     () => {
       const a1 = H.wahl([2, 4, 5, 10]), k = H.wahl([5, 8, 10, 20, 25]), a2 = a1 * k, f1 = H.wahl([50, 100, 150, 200]);
-      return { frage: `Bei einer hydraulischen Presse hat der kleine Kolben ${a1} cm², der große ${a2} cm². Auf den kleinen drückst du mit ${f1} N. Welche Kraft entsteht am großen Kolben?`, ...H.optionen(f1 * k, [f1 / k, f1 + a2, f1 * a1, f1 * k / 2], x => H.einheit(x, 'N'), { ganz: false }), erklaerung: ['Der Druck ist in der Flüssigkeit überall gleich.', `Der große Kolben ist ${k}-mal so groß wie der kleine.`, `${f1} N × ${k} = ${fz(f1 * k)} N`] };
+      return { frage: `Bei einer hydraulischen Presse hat der kleine Kolben ${a1} cm², der große ${a2} cm². Auf den kleinen drückst du mit ${f1} N. Welche Kraft entsteht am großen Kolben?`, ...H.optionen(f1 * k, [[f1 / k, 'Du hast geteilt. Am großen Kolben ist die Kraft aber größer.'], [f1 + a2, 'Du hast Kraft und Fläche addiert. Rechne mit dem Verhältnis der Flächen.'], [f1 * a1, `Du hast mit der kleinen Fläche malgenommen. Rechne mit dem Verhältnis ${a2} ÷ ${a1} = ${k}.`], f1 * k / 2], x => H.einheit(x, 'N'), { ganz: false }), erklaerung: ['Der Druck ist in der Flüssigkeit überall gleich.', `Der große Kolben ist ${k}-mal so groß wie der kleine.`, `${f1} N × ${k} = ${fz(f1 * k)} N`] };
     },
     () => {
       const v = H.wahl([36, 54, 72, 90, 108]), ms = v / 3.6;
-      return { frage: `Ein Fahrzeug fährt ${v} km/h. Wie viele Meter legt es pro Sekunde zurück?`, ...H.optionen(ms, [v / 6, v * 3.6, ms + 5, ms * 2], x => H.einheit(x, 'm'), { ganz: false }), erklaerung: ['1 km/h = 1000 m ÷ 3600 s, also km/h ÷ 3,6 = m/s', `${v} ÷ 3,6 = ${fz(ms)} m pro Sekunde`] };
+      return { frage: `Ein Fahrzeug fährt ${v} km/h. Wie viele Meter legt es pro Sekunde zurück?`, ...H.optionen(ms, [[v / 6, 'Teile durch 3,6, nicht durch 6.'], [v * 3.6, 'Du hast mal 3,6 gerechnet. Von km/h nach m/s teilst du durch 3,6.'], ms + 5, ms * 2], x => H.einheit(x, 'm'), { ganz: false }), erklaerung: ['1 km/h = 1000 m ÷ 3600 s, also km/h ÷ 3,6 = m/s', `${v} ÷ 3,6 = ${fz(ms)} m pro Sekunde`] };
     }
   ]
 };
